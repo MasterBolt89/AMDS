@@ -1,5 +1,5 @@
 import React from 'react';
-import { DomainSummary, DomainId } from '../types/api';
+import { DomainSummary, DomainId, DataQuality } from '../types/api';
 import { StatusBadge, QualityBadge } from './StatusBadge';
 import {
   Heart,
@@ -11,17 +11,18 @@ import {
   Wind,
   Eye,
   Utensils,
-  ChevronRight,
   AlertCircle,
   Clock,
+  Info,
 } from 'lucide-react';
 
 interface DomainCardProps {
   domain: DomainSummary;
+  isSelected?: boolean;
   onSelect: (domainId: DomainId) => void;
 }
 
-export const getDomainIcon = (domainId: DomainId, size: number = 18) => {
+export const getDomainIcon = (domainId: DomainId, size: number = 14) => {
   switch (domainId) {
     case 'cardiovascular':
       return <Heart size={size} color="#F87171" />;
@@ -51,7 +52,7 @@ export interface ParsedHeadlineMetric {
   metric_key?: string;
   delta_from_baseline_pct: number | null;
   baseline_mean: number | null;
-  quality?: string;
+  quality?: DataQuality | string;
 }
 
 export const METRIC_DICTIONARY: Record<
@@ -147,14 +148,12 @@ export function parseHeadlineMetric(domain: DomainSummary): ParsedHeadlineMetric
     const text = domain.headline_metric.trim();
     if (!text) return null;
 
-    // Check if it's a known metric key (e.g. "resting_hr_bpm")
     if (METRIC_DICTIONARY[text]) {
       const meta = METRIC_DICTIONARY[text];
       let value: number | string = meta.nominalValue;
       let baseline: number | null = meta.nominalBaseline;
       let delta: number | null = null;
 
-      // Extract current and baseline from status_reason if available
       const reason = domain.status_reason || '';
       const currentMatch = reason.match(/current:\s*([0-9.]+)/i);
       const baselineMatch = reason.match(/baseline(?:\s*mean)?:\s*([0-9.]+)/i);
@@ -179,8 +178,6 @@ export function parseHeadlineMetric(domain: DomainSummary): ParsedHeadlineMetric
       };
     }
 
-    // Try parsing formatted string like "75.0 bpm (Baseline: 62.0 bpm, +21.0%)"
-    // or "4.3h (Baseline: 7.5h, -42.7%)" or "Adherence: 95.0% (Baseline: 95.0%)"
     const formattedMatch = text.match(
       /^(?:([A-Za-z\s]+):\s*)?([0-9.]+)\s*([a-zA-Z/%]+)?(?:\s*\(Baseline:\s*([0-9.]+)[^,]*,\s*([+-]?[0-9.]+)%[^)]*\))?/i
     );
@@ -202,7 +199,6 @@ export function parseHeadlineMetric(domain: DomainSummary): ParsedHeadlineMetric
       };
     }
 
-    // Fallback: simple numeric string or token
     return {
       value: text,
       unit: '',
@@ -216,20 +212,29 @@ export function parseHeadlineMetric(domain: DomainSummary): ParsedHeadlineMetric
   return null;
 }
 
-export const DomainCard: React.FC<DomainCardProps> = ({ domain, onSelect }) => {
+export const DomainCard: React.FC<DomainCardProps> = ({ domain, isSelected = false, onSelect }) => {
   const isInsufficient = domain.status === 'INSUFFICIENT_DATA';
   const isAttention = domain.status === 'ATTENTION';
   const isCritical = domain.status === 'CRITICAL';
 
-  let borderColor = '#1F2937';
-  let borderStyle = 'solid';
-  if (isInsufficient) {
-    borderColor = '#475569';
-    borderStyle = 'dashed';
-  } else if (isCritical) {
-    borderColor = '#DC2626';
+  // Determine top 3px accent bar color per Option 2 specification:
+  // Neuro/Radiation domains: Sky Cobalt (#38BDF8)
+  // Physiological domains: Bio-Mint Emerald (#34D399)
+  // Attention: Warm Amber (#FBBF24)
+  // Critical: Alert Red (#EF4444)
+  // Insufficient: Cool Slate (#64748B)
+  const isNeuroRadiation =
+    domain.domain_id === 'behavioral_psych' ||
+    domain.domain_id === 'radiation' ||
+    domain.domain_id === 'sensorimotor_neuro';
+
+  let accentBarColor = isNeuroRadiation ? '#38BDF8' : '#34D399';
+  if (isCritical) {
+    accentBarColor = '#EF4444';
   } else if (isAttention) {
-    borderColor = '#D97706';
+    accentBarColor = '#FBBF24';
+  } else if (isInsufficient) {
+    accentBarColor = '#64748B';
   }
 
   const parsed = parseHeadlineMetric(domain);
@@ -239,150 +244,168 @@ export const DomainCard: React.FC<DomainCardProps> = ({ domain, onSelect }) => {
       data-testid={`domain-card-${domain.domain_id}`}
       onClick={() => onSelect(domain.domain_id)}
       style={{
-        backgroundColor: '#111827',
-        border: `1px ${borderStyle} ${borderColor}`,
-        borderRadius: '6px',
-        padding: '16px',
+        backgroundColor: isSelected ? '#111827' : '#0C101A',
+        border: isInsufficient
+          ? '1px dashed #475569'
+          : isSelected
+          ? `1px solid ${accentBarColor}`
+          : '1px solid #1E293B',
+        borderRadius: '2px',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
         cursor: 'pointer',
-        transition: 'all 0.15s ease-in-out',
+        transition: 'all 0.12s ease-in-out',
         position: 'relative',
-        minHeight: '230px',
+        minHeight: '145px',
+        overflow: 'hidden',
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = '#162032';
-        e.currentTarget.style.transform = 'translateY(-2px)';
+        if (!isSelected) {
+          e.currentTarget.style.backgroundColor = '#121826';
+          e.currentTarget.style.borderColor = '#334155';
+        }
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = '#111827';
-        e.currentTarget.style.transform = 'translateY(0px)';
+        if (!isSelected) {
+          e.currentTarget.style.backgroundColor = '#0C101A';
+          e.currentTarget.style.borderColor = isInsufficient ? '#475569' : '#1E293B';
+        }
       }}
     >
-      <div>
-        {/* Header: Icon, Name & Status */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div
+      {/* Top 3px Solid Accent Bar */}
+      <div
+        style={{
+          height: '3px',
+          width: '100%',
+          backgroundColor: accentBarColor,
+        }}
+      />
+
+      <div style={{ padding: '10px 12px 6px 12px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+        {/* Top Row: Short Domain Label + Scope Notice Tooltip on Left, Status Dot + Label on Right */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '8px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span
               style={{
-                backgroundColor: '#1E293B',
-                padding: '6px',
-                borderRadius: '4px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                fontSize: '11px',
+                fontWeight: 800,
+                color: isSelected ? '#38BDF8' : '#F1F5F9',
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+                fontFamily: "'JetBrains Mono', monospace",
               }}
             >
-              {getDomainIcon(domain.domain_id, 16)}
-            </div>
-            <div>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: '#F8FAFC' }}>{domain.display_name}</div>
-              <div
-                style={{
-                  fontSize: '10px',
-                  color: '#64748B',
-                  fontFamily: "'JetBrains Mono', monospace",
-                  textTransform: 'uppercase',
-                }}
-              >
-                {domain.domain_id}
+              {domain.display_name.split('&')[0].replace('Health', '').trim()}
+            </span>
+            <div className="tooltip-container" onClick={(e) => e.stopPropagation()}>
+              <Info size={11} color="#64748B" style={{ cursor: 'help' }} />
+              <div className="tooltip-content">
+                <div style={{ fontWeight: 700, color: '#38BDF8', marginBottom: '2px' }}>
+                  {domain.display_name} Scope Notice
+                </div>
+                {domain.measurement_scope_notice}
               </div>
             </div>
           </div>
-          <StatusBadge status={domain.status} size="sm" />
+
+          {/* Status Dot + Pill */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              fontSize: '10px',
+              fontFamily: "'JetBrains Mono', monospace",
+              fontWeight: 700,
+              color: isCritical
+                ? '#EF4444'
+                : isAttention
+                ? '#FBBF24'
+                : isInsufficient
+                ? '#94A3B8'
+                : '#34D399',
+            }}
+          >
+            <span>{isInsufficient ? '◌' : '●'}</span>
+            <span>
+              {isCritical
+                ? 'CRITICAL'
+                : isAttention
+                ? 'ATTENTION'
+                : isInsufficient
+                ? 'INSUFFICIENT'
+                : 'NOMINAL'}
+            </span>
+          </div>
         </div>
 
-        {/* Headline Telemetry OR Insufficient Data Explanation */}
+        {/* Center: Monospace Reading OR Insufficient Data Gap Notice */}
         {parsed === null ? (
           <div
             data-testid="insufficient-data-notice"
             style={{
-              backgroundColor: '#0D1320',
+              backgroundColor: '#07090F',
               border: '1px dashed #475569',
-              borderRadius: '4px',
-              padding: '10px 12px',
-              marginBottom: '12px',
+              borderRadius: '2px',
+              padding: '6px 8px',
+              margin: 'auto 0',
             }}
           >
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
+                gap: '5px',
                 color: '#94A3B8',
-                fontSize: '11px',
-                fontWeight: 600,
-                marginBottom: '4px',
+                fontSize: '10px',
+                fontWeight: 700,
                 fontFamily: "'JetBrains Mono', monospace",
+                marginBottom: '2px',
               }}
             >
-              <AlertCircle size={13} color="#94A3B8" />
+              <AlertCircle size={11} color="#94A3B8" />
               SURVEILLANCE GAP DETECTED
             </div>
             <div
               style={{
-                fontSize: '11px',
+                fontSize: '10px',
                 color: '#CBD5E1',
-                lineHeight: '1.4',
+                lineHeight: '1.3',
                 fontStyle: 'italic',
               }}
             >
-              {domain.status_reason || 'Periodic biomarker assay overdue. Telemetry inputs insufficient for confidence scoring.'}
+              {domain.status_reason || 'Biomarker assay overdue.'}
             </div>
           </div>
         ) : (
           <div
             data-testid="headline-telemetry-box"
             style={{
-              backgroundColor: '#0D1320',
-              border: `1px solid ${isCritical ? '#7F1D1D' : isAttention ? '#78350F' : '#1E293B'}`,
-              borderRadius: '4px',
-              padding: '10px 12px',
-              marginBottom: '12px',
+              margin: 'auto 0',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
             }}
           >
-            {/* Label & Optional Metric Key */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-              <span
-                data-testid="headline-label"
-                style={{
-                  fontSize: '10px',
-                  fontWeight: 600,
-                  color: '#94A3B8',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  fontFamily: "'JetBrains Mono', monospace",
-                }}
-              >
-                {parsed.label}
-              </span>
-              {parsed.quality ? (
-                <QualityBadge quality={parsed.quality as any} />
-              ) : parsed.metric_key ? (
-                <span
-                  data-testid="headline-metric-key"
-                  style={{
-                    fontSize: '9px',
-                    color: '#64748B',
-                    fontFamily: "'JetBrains Mono', monospace",
-                  }}
-                >
-                  {parsed.metric_key}
-                </span>
-              ) : null}
-            </div>
-
-            {/* Main Tabular Monospace Value & Unit */}
+            {/* Primary Tabular Reading & Unit */}
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
               <span
                 data-testid="headline-value"
                 style={{
                   fontSize: '22px',
-                  fontWeight: 700,
-                  color: isCritical ? '#F87171' : isAttention ? '#FCD34D' : '#F8FAFC',
+                  fontWeight: 800,
+                  color: isCritical ? '#EF4444' : isAttention ? '#FBBF24' : '#F8FAFC',
                   fontFamily: "'JetBrains Mono', monospace",
                   fontVariantNumeric: 'tabular-nums',
+                  lineHeight: '1.1',
                 }}
               >
                 {parsed.value}
@@ -391,7 +414,7 @@ export const DomainCard: React.FC<DomainCardProps> = ({ domain, onSelect }) => {
                 <span
                   data-testid="headline-unit"
                   style={{
-                    fontSize: '12px',
+                    fontSize: '11px',
                     color: '#94A3B8',
                     fontWeight: 600,
                     fontFamily: "'JetBrains Mono', monospace",
@@ -404,11 +427,16 @@ export const DomainCard: React.FC<DomainCardProps> = ({ domain, onSelect }) => {
                 <span
                   data-testid="headline-delta"
                   style={{
-                    fontSize: '11px',
-                    color: parsed.delta_from_baseline_pct > 0 ? (isAttention ? '#F59E0B' : '#34D399') : '#94A3B8',
+                    fontSize: '10px',
+                    color:
+                      parsed.delta_from_baseline_pct > 0
+                        ? isAttention
+                          ? '#FBBF24'
+                          : '#34D399'
+                        : '#94A3B8',
                     fontFamily: "'JetBrains Mono', monospace",
                     marginLeft: 'auto',
-                    fontWeight: 600,
+                    fontWeight: 700,
                   }}
                 >
                   {parsed.delta_from_baseline_pct > 0 ? '+' : ''}
@@ -417,71 +445,66 @@ export const DomainCard: React.FC<DomainCardProps> = ({ domain, onSelect }) => {
               )}
             </div>
 
-            {/* Baseline Reference When Available */}
-            {parsed.baseline_mean !== null && parsed.baseline_mean !== undefined && (
-              <div
-                data-testid="headline-baseline"
+            {/* Sub-label and Baseline */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginTop: '3px',
+              }}
+            >
+              <span
+                data-testid="headline-label"
                 style={{
-                  fontSize: '10px',
+                  fontSize: '9px',
+                  fontWeight: 600,
                   color: '#64748B',
-                  marginTop: '4px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
                   fontFamily: "'JetBrains Mono', monospace",
                 }}
               >
-                Baseline: {parsed.baseline_mean} {parsed.unit}
-              </div>
-            )}
+                {parsed.label}
+              </span>
+              {parsed.baseline_mean !== null && (
+                <span
+                  data-testid="headline-baseline"
+                  style={{
+                    fontSize: '9px',
+                    color: '#64748B',
+                    fontFamily: "'JetBrains Mono', monospace",
+                  }}
+                >
+                  Baseline: {parsed.baseline_mean} {parsed.unit}
+                </span>
+              )}
+            </div>
           </div>
         )}
-
-        {/* Measurement Scope Notice (Guardrail Boundary Callout) */}
-        <div
-          style={{
-            fontSize: '10px',
-            color: '#94A3B8',
-            lineHeight: '1.35',
-            backgroundColor: '#0F172A',
-            borderLeft: '2px solid #38BDF8',
-            padding: '5px 8px',
-            borderRadius: '2px',
-            marginBottom: '10px',
-          }}
-        >
-          <span style={{ color: '#38BDF8', fontWeight: 700 }}>SCOPE NOTICE: </span>
-          {domain.measurement_scope_notice}
-        </div>
       </div>
 
-      {/* Footer: Completeness & Details Link */}
+      {/* Clean 1-Line Micro-Caption / Completeness Footer */}
       <div
+        data-testid="domain-completeness"
         style={{
+          borderTop: '1px solid #1E293B',
+          padding: '4px 12px',
+          backgroundColor: '#080B12',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          borderTop: '1px solid #1E293B',
-          paddingTop: '8px',
-          marginTop: 'auto',
+          fontSize: '9px',
+          color: '#64748B',
+          fontFamily: "'JetBrains Mono', monospace",
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Clock size={11} color="#64748B" />
-          <span style={{ fontSize: '10px', color: '#64748B', fontFamily: "'JetBrains Mono', monospace" }}>
-            Completeness: {domain.completeness_pct}%
-          </span>
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '2px',
-            fontSize: '11px',
-            fontWeight: 600,
-            color: '#38BDF8',
-          }}
-        >
-          <span>Detail</span>
-          <ChevronRight size={13} />
-        </div>
+        <span>
+          {isInsufficient ? 'CADENCE OVERDUE' : `${domain.completeness_pct}% COMPLETE`}
+        </span>
+        <span style={{ color: isSelected ? '#38BDF8' : '#475569', fontWeight: 600 }}>
+          {isSelected ? '● ACTIVE STREAM' : 'VIEW TELEMETRY →'}
+        </span>
       </div>
     </div>
   );

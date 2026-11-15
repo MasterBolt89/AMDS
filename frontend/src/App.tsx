@@ -11,12 +11,14 @@ import {
 import { apiClient } from './api/client';
 import { Header } from './components/Header';
 import { DomainCard } from './components/DomainCard';
+import { EclssStrip } from './components/EclssStrip';
+import { EmbeddedTelemetryChart } from './components/EmbeddedTelemetryChart';
 import { DomainDetailView } from './components/DomainDetailView';
 import { FindingsPanel } from './components/FindingsPanel';
 import { RecommendationsPanel } from './components/RecommendationsPanel';
 import { TelemetryBatchModal } from './components/TelemetryBatchModal';
 import { OperationalRisksModal } from './components/OperationalRisksModal';
-import { Activity, ShieldCheck, CheckCircle2, Wind } from 'lucide-react';
+import { Activity, ShieldCheck, CheckCircle2 } from 'lucide-react';
 
 export const App: React.FC = () => {
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
@@ -24,7 +26,12 @@ export const App: React.FC = () => {
   const [astronauts, setAstronauts] = useState<AstronautSummary[]>([]);
   const [activeAstronautId, setActiveAstronautId] = useState<string>('astro-101');
   const [activeScenarioId, setActiveScenarioId] = useState<string>('nominal_iss_baseline');
+
+  // Master-Detail Console State
+  const [selectedDomainId, setSelectedDomainId] = useState<DomainId>('cardiovascular');
   const [activeDomainDetail, setActiveDomainDetail] = useState<DomainDetailResponse | null>(null);
+  const [isDetailExpanded, setIsDetailExpanded] = useState<boolean>(false);
+
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,31 +49,36 @@ export const App: React.FC = () => {
     }, 4000);
   };
 
-  // Step 2: Dynamic Astronaut Initialization & Scenario Population on mount
+  // Dynamic Astronaut Initialization & Scenario Population on mount
   const initializeApp = async () => {
     setLoading(true);
     setError(null);
     try {
-      // 1. Fetch astronauts dynamically
       const astroList = await apiClient.getAstronauts();
       setAstronauts(astroList);
       const primaryAstronautId = astroList[0]?.id || 'astro-101';
       setActiveAstronautId(primaryAstronautId);
 
-      // 2. Fetch scenarios list from GET /api/v1/simulation/scenarios
       const scenarioList = await apiClient.getScenarios();
       setScenarios(scenarioList);
 
-      // 3. Fetch dashboard for primary astronaut
       const dash = await apiClient.getDashboard(primaryAstronautId);
       setDashboard(dash);
 
       if (dash.data_provenance_summary?.scenario_id) {
         setActiveScenarioId(dash.data_provenance_summary.scenario_id);
       }
+
+      // Preload active domain telemetry for bottom chart
+      try {
+        const detail = await apiClient.getDomainDetail(primaryAstronautId, 'cardiovascular');
+        setActiveDomainDetail(detail);
+      } catch (err) {
+        console.warn('Initial domain detail load error:', err);
+      }
     } catch (err: any) {
       console.error('Initialization error:', err);
-      setError(err?.message || 'Failed to initialize AMPCS telemetry dashboard');
+      setError(err?.message || 'Failed to initialize flight-surgeon console');
     } finally {
       setLoading(false);
     }
@@ -82,10 +94,10 @@ export const App: React.FC = () => {
       setActiveAstronautId(astronautId);
       const updatedDash = await apiClient.getDashboard(astronautId);
       setDashboard(updatedDash);
-      if (activeDomainDetail) {
-        const updatedDetail = await apiClient.getDomainDetail(astronautId, activeDomainDetail.domain_id);
-        setActiveDomainDetail(updatedDetail);
-      }
+
+      const updatedDetail = await apiClient.getDomainDetail(astronautId, selectedDomainId);
+      setActiveDomainDetail(updatedDetail);
+
       showToast(`Switched crew profile to ${updatedDash.astronaut.callsign} (${astronautId})`);
     } catch (err: any) {
       setError(err?.message || `Failed to switch astronaut profile to ${astronautId}`);
@@ -100,11 +112,12 @@ export const App: React.FC = () => {
       const updatedDash = await apiClient.loadSimulationScenario(scenarioId, activeAstronautId);
       setActiveScenarioId(scenarioId);
       setDashboard(updatedDash);
-      if (activeDomainDetail) {
-        const updatedDetail = await apiClient.getDomainDetail(activeAstronautId, activeDomainDetail.domain_id);
-        setActiveDomainDetail(updatedDetail);
-      }
-      const scName = scenarios.find((s) => (s.scenario_id || (s as any).id) === scenarioId)?.name || scenarioId;
+
+      const updatedDetail = await apiClient.getDomainDetail(activeAstronautId, selectedDomainId);
+      setActiveDomainDetail(updatedDetail);
+
+      const scName =
+        scenarios.find((s) => (s.scenario_id || (s as any).id) === scenarioId)?.name || scenarioId;
       showToast(`Loaded Scenario: ${scName}`);
     } catch (err: any) {
       setError(err?.message || 'Failed to switch scenario');
@@ -114,12 +127,12 @@ export const App: React.FC = () => {
   };
 
   const handleSelectDomain = async (domainId: DomainId) => {
+    setSelectedDomainId(domainId);
     try {
       const detail = await apiClient.getDomainDetail(activeAstronautId, domainId);
       setActiveDomainDetail(detail);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: any) {
-      setError(err?.message || `Failed to fetch domain detail for ${domainId}`);
+      console.error(`Failed to fetch domain detail for ${domainId}`, err);
     }
   };
 
@@ -144,11 +157,13 @@ export const App: React.FC = () => {
       const result = await apiClient.ingestTelemetryBatch(req);
       const refreshedDash = await apiClient.getDashboard(activeAstronautId);
       setDashboard(refreshedDash);
-      if (activeDomainDetail) {
-        const refreshedDetail = await apiClient.getDomainDetail(activeAstronautId, activeDomainDetail.domain_id);
-        setActiveDomainDetail(refreshedDetail);
-      }
-      showToast(result.message || `Successfully ingested ${result.ingested_count} telemetry measurement(s)`);
+
+      const refreshedDetail = await apiClient.getDomainDetail(activeAstronautId, selectedDomainId);
+      setActiveDomainDetail(refreshedDetail);
+
+      showToast(
+        result.message || `Successfully ingested ${result.ingested_count} telemetry measurement(s)`
+      );
     } catch (err: any) {
       setError(err?.message || 'Failed to ingest telemetry batch');
     }
@@ -180,14 +195,14 @@ export const App: React.FC = () => {
           alignItems: 'center',
           justifyContent: 'center',
           height: '100vh',
-          backgroundColor: '#090D16',
+          backgroundColor: '#080B12',
           color: '#38BDF8',
           fontFamily: "'JetBrains Mono', monospace",
         }}
       >
         <Activity size={32} className="animate-spin" />
-        <div style={{ marginTop: '16px', fontSize: '14px', letterSpacing: '0.08em' }}>
-          INITIALIZING NASA AMPCS TELEMETRY STREAM...
+        <div style={{ marginTop: '16px', fontSize: '13px', letterSpacing: '0.08em' }}>
+          INITIALIZING NASA FLIGHT-SURGEON COMMAND CONSOLE...
         </div>
       </div>
     );
@@ -202,15 +217,17 @@ export const App: React.FC = () => {
           alignItems: 'center',
           justifyContent: 'center',
           height: '100vh',
-          backgroundColor: '#090D16',
+          backgroundColor: '#080B12',
           color: '#EF4444',
           fontFamily: "'JetBrains Mono', monospace",
           padding: '24px',
           textAlign: 'center',
         }}
       >
-        <div style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>TELEMETRY STREAM ERROR</div>
-        <div style={{ fontSize: '13px', color: '#CBD5E1', marginBottom: '16px' }}>{error}</div>
+        <div style={{ fontSize: '16px', fontWeight: 800, marginBottom: '8px' }}>
+          COMMAND CONSOLE CONNECTION ERROR
+        </div>
+        <div style={{ fontSize: '12px', color: '#CBD5E1', marginBottom: '16px' }}>{error}</div>
         <button className="aero-btn aero-btn-primary" onClick={initializeApp}>
           Retry Connection
         </button>
@@ -221,32 +238,35 @@ export const App: React.FC = () => {
   if (!dashboard) return null;
 
   const personalDomains = dashboard.domains.filter((d) => d.domain_category === 'PERSONAL_HEALTH');
-  const environmentalDomains = dashboard.domains.filter((d) => d.domain_category === 'ENVIRONMENTAL_ECLSS');
+  const environmentalDomains = dashboard.domains.filter(
+    (d) => d.domain_category === 'ENVIRONMENTAL_ECLSS'
+  );
+  const activeSummary = dashboard.domains.find((d) => d.domain_id === selectedDomainId);
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#090D16', color: '#F8FAFC' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#080B12', color: '#F8FAFC' }}>
       {/* Toast Notification */}
       {toastMessage && (
         <div
           style={{
             position: 'fixed',
-            bottom: '24px',
-            right: '24px',
+            bottom: '20px',
+            right: '20px',
             backgroundColor: '#064E3B',
             border: '1px solid #059669',
             color: '#D1FAE5',
-            padding: '12px 18px',
-            borderRadius: '4px',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+            padding: '10px 16px',
+            borderRadius: '2px',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.8)',
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            fontSize: '13px',
+            fontSize: '12px',
             fontFamily: "'JetBrains Mono', monospace",
             zIndex: 2000,
           }}
         >
-          <CheckCircle2 size={16} color="#34D399" />
+          <CheckCircle2 size={15} color="#34D399" />
           <span>{toastMessage}</span>
         </div>
       )}
@@ -268,111 +288,116 @@ export const App: React.FC = () => {
         }}
       />
 
-      {/* Main View Router: Detail View vs Command Overview */}
-      {activeDomainDetail ? (
+      {/* Main View Router: Full Expanded Deep View vs Option 2 Master-Detail Asymmetric Split Pane */}
+      {isDetailExpanded && activeDomainDetail ? (
         <DomainDetailView
           detail={activeDomainDetail}
-          onBack={() => setActiveDomainDetail(null)}
+          onBack={() => setIsDetailExpanded(false)}
           onOpenTelemetryForDomain={handleOpenTelemetryForDomain}
         />
       ) : (
-        <main style={{ padding: '24px', maxWidth: '1440px', margin: '0 auto' }}>
-          {/* Section 1: Personal Health Domains (8) */}
-          <section style={{ marginBottom: '32px' }}>
+        <main
+          style={{
+            padding: '16px 20px',
+            maxWidth: '1600px',
+            margin: '0 auto',
+            display: 'grid',
+            gridTemplateColumns: 'minmax(0, 62%) minmax(0, 38%)',
+            gap: '16px',
+            alignItems: 'start',
+          }}
+        >
+          {/* ========================================================================= */}
+          {/* LEFT PANE (62% Width): 9-Domain Matrix + Embedded Live Telemetry Chart */}
+          {/* ========================================================================= */}
+          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+            {/* Section 1 Header */}
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                marginBottom: '14px',
-                borderBottom: '1px solid #1F2937',
-                paddingBottom: '8px',
+                marginBottom: '10px',
+                borderBottom: '1px solid #1E293B',
+                paddingBottom: '6px',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <ShieldCheck size={18} color="#38BDF8" />
-                <h2 style={{ fontSize: '15px', fontWeight: 800, margin: 0, letterSpacing: '0.04em' }}>
-                  PERSONAL HEALTH SURVEILLANCE DOMAINS ({personalDomains.length})
+                <ShieldCheck size={16} color="#38BDF8" />
+                <h2
+                  style={{
+                    fontSize: '12px',
+                    fontWeight: 800,
+                    margin: 0,
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                    fontFamily: "'JetBrains Mono', monospace",
+                    color: '#F8FAFC',
+                  }}
+                >
+                  PERSONAL HEALTH SURVEILLANCE MATRIX ({personalDomains.length})
                 </h2>
               </div>
-              <div style={{ fontSize: '11px', color: '#64748B', fontFamily: "'JetBrains Mono', monospace" }}>
-                PHYSIOLOGICAL & COGNITIVE INTEGRITY
+              <div
+                style={{
+                  fontSize: '9px',
+                  color: '#64748B',
+                  fontFamily: "'JetBrains Mono', monospace",
+                }}
+              >
+                2×4 HAIRLINE GRID · CLICK TILE TO STREAM TELEMETRY
               </div>
             </div>
 
+            {/* 1. Top 2x4 Hairline Grid (8 Personal Domains) */}
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))',
-                gap: '16px',
+                gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+                gap: '8px',
+                marginBottom: '14px',
               }}
             >
               {personalDomains.map((dom) => (
                 <DomainCard
                   key={dom.domain_id}
                   domain={dom}
+                  isSelected={selectedDomainId === dom.domain_id}
                   onSelect={handleSelectDomain}
                 />
               ))}
             </div>
-          </section>
 
-          {/* Section 2: Environmental & Life Support (ECLSS) */}
-          <section style={{ marginBottom: '32px' }}>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: '14px',
-                borderBottom: '1px solid #1F2937',
-                paddingBottom: '8px',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Wind size={18} color="#2DD4BF" />
-                <h2 style={{ fontSize: '15px', fontWeight: 800, margin: 0, letterSpacing: '0.04em', color: '#2DD4BF' }}>
-                  ENVIRONMENTAL & LIFE SUPPORT (ECLSS) ({environmentalDomains.length})
-                </h2>
-              </div>
-              <div style={{ fontSize: '11px', color: '#64748B', fontFamily: "'JetBrains Mono', monospace" }}>
-                HABITAT ATMOSPHERE & SYSTEM INTEGRITY
-              </div>
-            </div>
-
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))',
-                gap: '16px',
-              }}
-            >
-              {environmentalDomains.map((dom) => (
-                <DomainCard
-                  key={dom.domain_id}
-                  domain={dom}
-                  onSelect={handleSelectDomain}
-                />
-              ))}
-            </div>
-          </section>
-
-          {/* Section 3: Cross-Domain Clinical Findings */}
-          <section>
-            <FindingsPanel
-              findings={dashboard.findings}
-              onSelectDomain={handleSelectDomain}
+            {/* 2. Middle Full-Width ENVIRONMENT_ECLSS Strip */}
+            <EclssStrip
+              domain={environmentalDomains[0]}
+              isSelected={selectedDomainId === 'environment_eclss'}
+              onSelect={handleSelectDomain}
             />
-          </section>
 
-          {/* Section 4: Closed-Loop Clinical Recommendations */}
-          <section>
+            {/* 3. Bottom Embedded Live Telemetry Graph */}
+            <EmbeddedTelemetryChart
+              detail={activeDomainDetail}
+              summary={activeSummary}
+              onExpand={() => setIsDetailExpanded(true)}
+              onOpenTelemetryModal={handleOpenTelemetryForDomain}
+            />
+          </div>
+
+          {/* ========================================================================= */}
+          {/* RIGHT PANE (38% Width, Pinned Height): Findings & Streamlined Protocol Queue */}
+          {/* ========================================================================= */}
+          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+            {/* Top Section: Cross-Domain Findings & Action Queue */}
+            <FindingsPanel findings={dashboard.findings} onSelectDomain={handleSelectDomain} />
+
+            {/* Bottom Section: Recommended Protocol & Escalation Trigger */}
             <RecommendationsPanel
               recommendations={dashboard.recommendations}
               astronautId={activeAstronautId}
               onAcknowledge={handleAcknowledgeRecommendation}
             />
-          </section>
+          </div>
         </main>
       )}
 
@@ -381,7 +406,9 @@ export const App: React.FC = () => {
         astronautId={activeAstronautId}
         defaultDomainId={telemetryDefaultDomain}
         defaultMetricId={telemetryDefaultMetric}
-        currentMissionDay={dashboard.astronaut?.mission_day || dashboard.mission_context?.mission_day || 42}
+        currentMissionDay={
+          dashboard.astronaut?.mission_day || dashboard.mission_context?.mission_day || 42
+        }
         isOpen={isTelemetryModalOpen}
         onClose={() => setIsTelemetryModalOpen(false)}
         onSubmit={handleIngestTelemetry}
@@ -390,7 +417,9 @@ export const App: React.FC = () => {
       {/* Operational Risks Modal */}
       <OperationalRisksModal
         astronautId={activeAstronautId}
-        currentMissionDay={dashboard.astronaut?.mission_day || dashboard.mission_context?.mission_day || 42}
+        currentMissionDay={
+          dashboard.astronaut?.mission_day || dashboard.mission_context?.mission_day || 42
+        }
         isOpen={isRisksModalOpen}
         onClose={() => setIsRisksModalOpen(false)}
         onLogRisk={handleLogRisk}
