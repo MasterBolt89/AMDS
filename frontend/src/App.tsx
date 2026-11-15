@@ -371,7 +371,17 @@ export const App: React.FC = () => {
   const activeSummary = dashboard.domains.find((d) => d.domain_id === selectedDomainId);
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#080B12', color: '#F8FAFC' }}>
+    <div
+      style={{
+        height: '100vh',
+        maxHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: '#080B12',
+        color: '#F8FAFC',
+        overflow: 'hidden',
+      }}
+    >
       {/* Toast Notification */}
       {toastMessage && (
         <div
@@ -475,20 +485,23 @@ export const App: React.FC = () => {
 
       {/* Main View Router: Full Expanded Deep View vs Option 2 Master-Detail Asymmetric Split Pane */}
       {isDetailExpanded && activeDomainDetail ? (
-        <DomainDetailView
-          detail={activeDomainDetail}
-          onBack={() => setIsDetailExpanded(false)}
-          onOpenTelemetryForDomain={handleOpenTelemetryForDomain}
-        />
+        <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+          <DomainDetailView
+            detail={activeDomainDetail}
+            onBack={() => setIsDetailExpanded(false)}
+            onOpenTelemetryForDomain={handleOpenTelemetryForDomain}
+          />
+        </div>
       ) : (
         <main
           ref={mainContainerRef}
           style={{
             width: '100%',
             maxWidth: 'none',
-            padding: '8px 12px',
+            padding: '6px 12px 8px 12px',
             display: 'flex',
-            height: 'calc(100vh - 76px)',
+            flex: 1,
+            minHeight: 0,
             boxSizing: 'border-box',
             overflow: 'hidden',
             gap: '0px',

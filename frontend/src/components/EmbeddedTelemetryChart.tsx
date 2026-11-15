@@ -294,6 +294,16 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
             >
               {detail.display_name} ({metricName})
             </span>
+            <span
+              style={{
+                marginLeft: '6px',
+                fontSize: '9px',
+                color: '#64748B',
+                fontFamily: "'JetBrains Mono', monospace",
+              }}
+            >
+              [SURVEILLANCE ONLY]
+            </span>
           </div>
         </div>
 
@@ -311,12 +321,12 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '3px',
+                gap: '4px',
                 backgroundColor: 'rgba(56, 189, 248, 0.1)',
                 border: '1px solid #0284C7',
                 color: '#38BDF8',
                 borderRadius: '2px',
-                padding: '2px 5px',
+                padding: '2px 6px',
                 fontSize: '9px',
                 fontWeight: 700,
                 cursor: 'pointer',
@@ -334,7 +344,7 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
               style={{
                 right: 0,
                 left: 'auto',
-                width: '280px',
+                width: '300px',
                 backgroundColor: '#07090F',
                 border: '1px solid #38BDF8',
                 boxShadow: '0 8px 24px rgba(0,0,0,0.9)',
@@ -355,7 +365,7 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
                 }}
               >
                 <ShieldAlert size={12} color="#38BDF8" />
-                NASA CLINICAL SURVEILLANCE NOTICE
+                NASA CLINICAL SURVEILLANCE SCOPE NOTICE
               </div>
               <div style={{ fontSize: '10px', color: '#CBD5E1', lineHeight: '1.4' }}>
                 {scopeNoticeText}
@@ -498,33 +508,6 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
             </LineChart>
           </ResponsiveContainer>
         </div>
-      </div>
-
-      {/* Scope Notice Banner (Responsive single-line strip that scales dynamically) */}
-      <div
-        style={{
-          flexShrink: 0,
-          height: '18px',
-          lineHeight: '18px',
-          fontSize: '8.5px',
-          color: '#94A3B8',
-          backgroundColor: '#07090F',
-          borderLeft: '2px solid #38BDF8',
-          padding: '0 6px',
-          fontFamily: "'JetBrains Mono', monospace",
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-        }}
-        title={scopeNoticeText}
-      >
-        <span style={{ color: '#38BDF8', fontWeight: 800, flexShrink: 0 }}>SCOPE NOTICE:</span>
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {scopeNoticeText}
-        </span>
       </div>
     </div>
   );
