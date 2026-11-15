@@ -80,9 +80,10 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
           marginBottom: '10px',
           flexShrink: 0,
           gap: '8px',
+          minWidth: 0,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, flex: 1, overflow: 'hidden' }}>
           <ShieldAlert size={15} color="#FBBF24" style={{ flexShrink: 0 }} />
           <h2
             style={{
@@ -94,7 +95,11 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
               color: '#F8FAFC',
               fontFamily: "'JetBrains Mono', monospace",
               whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              minWidth: 0,
             }}
+            title={`RECOMMENDED PROTOCOL & ESCALATION TRIGGER (${recommendations.length})`}
           >
             RECOMMENDED PROTOCOL & ESCALATION TRIGGER ({recommendations.length})
           </h2>
@@ -116,7 +121,7 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
                     backgroundColor: isSelected ? '#1E293B' : '#07090F',
                     border: `1px solid ${isSelected ? '#FBBF24' : '#334155'}`,
                     color: isSelected ? '#FBBF24' : '#94A3B8',
-                    padding: '2px 8px',
+                    padding: '2px 6px',
                     borderRadius: '2px',
                     fontSize: '11px',
                     fontFamily: "'JetBrains Mono', monospace",

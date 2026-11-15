@@ -48,9 +48,10 @@ export const FindingsPanel: React.FC<FindingsPanelProps> = ({ findings, onSelect
           marginBottom: '10px',
           flexShrink: 0,
           gap: '8px',
+          minWidth: 0,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, flex: 1, overflow: 'hidden' }}>
           <GitMerge size={15} color="#38BDF8" style={{ flexShrink: 0 }} />
           <h2
             style={{
@@ -62,7 +63,11 @@ export const FindingsPanel: React.FC<FindingsPanelProps> = ({ findings, onSelect
               color: '#F8FAFC',
               fontFamily: "'JetBrains Mono', monospace",
               whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              minWidth: 0,
             }}
+            title={`CROSS-DOMAIN FINDINGS & ACTION QUEUE (${findings.length})`}
           >
             CROSS-DOMAIN FINDINGS & ACTION QUEUE ({findings.length})
           </h2>
@@ -88,7 +93,7 @@ export const FindingsPanel: React.FC<FindingsPanelProps> = ({ findings, onSelect
                     backgroundColor: isSelected ? '#1E293B' : '#07090F',
                     border: `1px solid ${isSelected ? '#38BDF8' : '#334155'}`,
                     color: isSelected ? '#38BDF8' : '#94A3B8',
-                    padding: '2px 8px',
+                    padding: '2px 6px',
                     borderRadius: '2px',
                     fontSize: '11px',
                     fontFamily: "'JetBrains Mono', monospace",
