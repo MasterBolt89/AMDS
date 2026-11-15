@@ -109,7 +109,7 @@ async def _seed_nominal_iss(session: AsyncSession, astronaut_id: str, ref_time: 
             )
         )
 
-    # 3. Behavioral: cognitive_fatigue_score ~2.5
+    # 3. Behavioral: cognitive_fatigue_score ~15 /100
     for i in range(14):
         days_ago = 13 - i
         t = (ref_time - timedelta(days=days_ago)).replace(hour=11, minute=30, second=0)
@@ -119,8 +119,8 @@ async def _seed_nominal_iss(session: AsyncSession, astronaut_id: str, ref_time: 
                 domain_id=DomainId.BEHAVIORAL_PSYCH.value,
                 metric_name="cognitive_fatigue_score",
                 timestamp=t,
-                value=float(2.0 + (i % 2) * 0.8),
-                unit="score_1_10",
+                value=float(14.0 + (i % 3) * 1.0),
+                unit="/100",
                 quality="VALID",
                 provenance="SIMULATED",
                 modality="SUBJECTIVE_REPORT",
@@ -334,8 +334,8 @@ async def _seed_circadian_drift(session: AsyncSession, astronaut_id: str, ref_ti
             )
         )
 
-    # 3. Behavioral: Cognitive fatigue baseline ~2.5, rises to 7.0 (Z > 5)
-    fatigue_vals = [2.0, 2.5, 2.0, 3.0, 2.5, 2.0, 3.0, 2.5, 3.0, 2.5, 3.0, 5.0, 6.5, 7.0]
+    # 3. Behavioral: Cognitive fatigue baseline ~15 /100, rises to 36 /100 (Z > 5)
+    fatigue_vals = [14.0, 15.0, 14.5, 15.5, 15.0, 14.0, 15.0, 14.5, 15.0, 15.5, 15.0, 26.0, 32.0, 36.0]
     for i, val in enumerate(fatigue_vals):
         days_ago = len(fatigue_vals) - 1 - i
         t = (ref_time - timedelta(days=days_ago)).replace(hour=11, minute=30, second=0)
@@ -346,7 +346,7 @@ async def _seed_circadian_drift(session: AsyncSession, astronaut_id: str, ref_ti
                 metric_name="cognitive_fatigue_score",
                 timestamp=t,
                 value=float(val),
-                unit="score_1_10",
+                unit="/100",
                 quality="VALID",
                 provenance="SIMULATED",
                 modality="SUBJECTIVE_REPORT",
@@ -662,7 +662,8 @@ async def _seed_eva_incident_eclss(session: AsyncSession, astronaut_id: str, ref
 
 
 async def _add_nominal_baseline_records(astronaut_id: str, ref_time: datetime, records: list[MetricRecordModel]) -> None:
-    # Cardiovascular
+    # Cardiovascular: realistic physiological variation (61-63 bpm)
+    hr_pattern = [61.2, 62.4, 61.8, 62.9, 62.1, 61.5, 62.7, 62.0, 61.4, 62.8, 61.9, 62.5, 62.2, 62.0]
     for i in range(14):
         days_ago = 13 - i
         if days_ago == 0:
@@ -675,7 +676,7 @@ async def _add_nominal_baseline_records(astronaut_id: str, ref_time: datetime, r
                 domain_id=DomainId.CARDIOVASCULAR.value,
                 metric_name="resting_hr_bpm",
                 timestamp=t,
-                value=62.0,
+                value=hr_pattern[i],
                 unit="bpm",
                 quality="VALID",
                 provenance="SIMULATED",
@@ -699,7 +700,7 @@ async def _add_nominal_baseline_records(astronaut_id: str, ref_time: datetime, r
                 modality="OBJECTIVE_SENSOR",
             )
         )
-    # Behavioral
+    # Behavioral: cognitive_fatigue_score ~15 /100
     for i in range(14):
         days_ago = 13 - i
         t = (ref_time - timedelta(days=days_ago)).replace(hour=11, minute=30, second=0)
@@ -709,8 +710,8 @@ async def _add_nominal_baseline_records(astronaut_id: str, ref_time: datetime, r
                 domain_id=DomainId.BEHAVIORAL_PSYCH.value,
                 metric_name="cognitive_fatigue_score",
                 timestamp=t,
-                value=2.5,
-                unit="score_1_10",
+                value=15.0,
+                unit="/100",
                 quality="VALID",
                 provenance="SIMULATED",
                 modality="SUBJECTIVE_REPORT",

@@ -74,8 +74,8 @@ export const METRIC_DICTIONARY: Record<
   resting_hr_bpm: {
     label: 'Resting Heart Rate',
     unit: 'bpm',
-    nominalValue: 60,
-    nominalBaseline: 60,
+    nominalValue: 62.0,
+    nominalBaseline: 62.0,
   },
   sleep_duration_hours: {
     label: 'Sleep Duration',
@@ -86,44 +86,44 @@ export const METRIC_DICTIONARY: Record<
   cognitive_fatigue_score: {
     label: 'Cognitive Fatigue Score',
     unit: '/100',
-    nominalValue: 15,
-    nominalBaseline: 15,
+    nominalValue: 15.0,
+    nominalBaseline: 15.0,
   },
   exercise_adherence_pct: {
     label: 'Exercise Adherence',
     unit: '%',
-    nominalValue: 95,
-    nominalBaseline: 95,
+    nominalValue: 95.0,
+    nominalBaseline: 95.0,
   },
   crp_biomarker_mg_l: {
     label: 'C-Reactive Protein (CRP)',
     unit: 'mg/L',
     nominalValue: 0.82,
-    nominalBaseline: 0.85,
+    nominalBaseline: 0.82,
   },
   daily_dose_msv: {
     label: 'Daily Radiation Dose',
     unit: 'mSv',
-    nominalValue: 0.35,
-    nominalBaseline: 0.35,
+    nominalValue: 0.42,
+    nominalBaseline: 0.42,
   },
   co2_partial_pressure_mmhg: {
     label: 'Cabin ppCO₂',
     unit: 'mmHg',
-    nominalValue: 2.8,
-    nominalBaseline: 2.8,
+    nominalValue: 2.2,
+    nominalBaseline: 2.2,
   },
   postural_instability_score: {
     label: 'Postural Sway Instability',
-    unit: 'mm/s',
-    nominalValue: 12.0,
-    nominalBaseline: 12.0,
+    unit: 'score_1_10',
+    nominalValue: 1.5,
+    nominalBaseline: 1.5,
   },
   caloric_intake_kcal: {
     label: 'Caloric Intake',
     unit: 'kcal',
-    nominalValue: 2800,
-    nominalBaseline: 2800,
+    nominalValue: 2800.0,
+    nominalBaseline: 2800.0,
   },
 };
 
@@ -385,7 +385,7 @@ export const DomainCard: React.FC<DomainCardProps> = ({
                 fontSize: '11px',
                 fontWeight: 800,
                 color: isSelected ? '#38BDF8' : '#F1F5F9',
-                letterSpacing: '0.03em',
+                letterSpacing: '0.02em',
                 textTransform: 'uppercase',
                 fontFamily: "'JetBrains Mono', monospace",
                 whiteSpace: 'nowrap',
@@ -397,7 +397,7 @@ export const DomainCard: React.FC<DomainCardProps> = ({
               {shortName}
             </span>
             <div className="tooltip-container" onClick={(e) => e.stopPropagation()}>
-              <Info size={10} color="#64748B" style={{ cursor: 'help', flexShrink: 0 }} />
+              <Info size={11} color="#64748B" style={{ cursor: 'help', flexShrink: 0 }} />
               <div className="tooltip-content">
                 <div style={{ fontWeight: 700, color: '#38BDF8', marginBottom: '2px' }}>
                   {domain.display_name} Scope Notice
@@ -413,7 +413,7 @@ export const DomainCard: React.FC<DomainCardProps> = ({
               display: 'flex',
               alignItems: 'center',
               gap: '3px',
-              fontSize: '10px',
+              fontSize: '10.5px',
               fontFamily: "'JetBrains Mono', monospace",
               fontWeight: 700,
               whiteSpace: 'nowrap',
@@ -545,15 +545,15 @@ export const DomainCard: React.FC<DomainCardProps> = ({
             <div
               style={{
                 display: 'flex',
+                flexWrap: 'wrap',
                 alignItems: 'center',
-                gap: '5px',
-                fontSize: '10px',
+                columnGap: '6px',
+                rowGap: '2px',
+                fontSize: '11px',
                 fontFamily: "'JetBrains Mono', monospace",
                 color: '#64748B',
-                marginTop: '1px',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
+                marginTop: '2px',
+                lineHeight: '1.25',
               }}
             >
               {parsed.delta_from_baseline_pct !== null && (
@@ -571,7 +571,7 @@ export const DomainCard: React.FC<DomainCardProps> = ({
               )}
               {parsed.baseline_mean !== null && (
                 <>
-                  <span>·</span>
+                  <span style={{ color: '#475569' }}>·</span>
                   <span
                     data-testid="headline-baseline"
                     style={{ color: '#94A3B8', whiteSpace: 'nowrap' }}

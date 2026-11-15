@@ -54,9 +54,14 @@ def build_intelligence_report(
 
             direction = "elevation" if ev.z_score > 0 else "reduction"
             title = f"{DOMAIN_DEFINITIONS[domain_id].display_name} Baseline Drift"
+            baseline_label = (
+                "habitat 14-day rolling baseline"
+                if domain_id == DomainId.ENVIRONMENT_ECLSS
+                else "personal 14-day rolling baseline"
+            )
             what_changed = (
                 f"{ev.headline_metric} shows a statistical {direction} of "
-                f"{abs(ev.z_score)} standard deviations from personal 14-day rolling baseline "
+                f"{abs(ev.z_score)} standard deviations from {baseline_label} "
                 f"(current: {ev.headline_value}, baseline mean: {ev.baseline_mean}, std: {ev.baseline_std})."
             )
 
@@ -203,10 +208,38 @@ def build_intelligence_report(
             )
             recommendations.append(rec_item)
 
+    DOMAIN_HEADLINE_LABELS = {
+        DomainId.CARDIOVASCULAR: "Heart Rate",
+        DomainId.SLEEP_CIRCADIAN: "Sleep",
+        DomainId.BEHAVIORAL_PSYCH: "Cognitive Fatigue",
+        DomainId.MUSCULOSKELETAL: "Exercise Adherence",
+        DomainId.IMMUNE_MICROBIO: "CRP",
+        DomainId.RADIATION: "Daily Dose",
+        DomainId.SENSORIMOTOR_NEURO: "Postural Sway",
+        DomainId.NUTRITION: "Caloric Intake",
+        DomainId.ENVIRONMENT_ECLSS: "Cabin CO2",
+    }
+
     # 4. Build DomainSummary objects for all 9 domains
     domain_summaries: list[DomainSummary] = []
     for domain_id, ev in evaluations.items():
         defn = DOMAIN_DEFINITIONS[domain_id]
+        if ev.status != AssessmentStatus.INSUFFICIENT_DATA and ev.headline_value is not None:
+            unit = getattr(ev, "headline_unit", "") or ""
+            base_mean = round(ev.baseline_mean, 2)
+            if base_mean > 0:
+                delta_pct = round(((ev.headline_value - base_mean) / base_mean) * 100.0, 1)
+            else:
+                delta_pct = 0.0
+            sign = "+" if delta_pct >= 0 else ""
+            label_prefix = DOMAIN_HEADLINE_LABELS.get(domain_id, "Metric")
+            headline_str = (
+                f"{label_prefix}: {ev.headline_value} {unit} "
+                f"(Baseline: {base_mean} {unit}, {sign}{delta_pct}%)"
+            )
+        else:
+            headline_str = None
+
         summary = DomainSummary(
             domain_id=domain_id,
             domain_category=defn.domain_category,
@@ -215,7 +248,7 @@ def build_intelligence_report(
             status=ev.status,
             completeness_pct=ev.completeness_pct,
             last_updated=ev.last_updated,
-            headline_metric=None if ev.status == AssessmentStatus.INSUFFICIENT_DATA else ev.headline_metric,
+            headline_metric=headline_str,
             status_reason=ev.status_reason,
             active_finding_count=active_finding_count_by_domain[domain_id],
         )

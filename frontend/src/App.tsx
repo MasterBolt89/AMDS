@@ -177,9 +177,12 @@ export const App: React.FC = () => {
         setActiveScenarioId(dash.data_provenance_summary.scenario_id);
       }
 
-      // Preload active domain telemetry for bottom chart
+      // Preload active domain telemetry for bottom chart (auto-select domain in ATTENTION/CRITICAL)
+      const attentionDom = dash.domains?.find((d) => d.status === 'ATTENTION' || d.status === 'CRITICAL');
+      const initialDomain: DomainId = attentionDom ? attentionDom.domain_id : 'cardiovascular';
+      setSelectedDomainId(initialDomain);
       try {
-        const detail = await apiClient.getDomainDetail(primaryAstronautId, 'cardiovascular');
+        const detail = await apiClient.getDomainDetail(primaryAstronautId, initialDomain);
         setActiveDomainDetail(detail);
       } catch (err) {
         console.warn('Initial domain detail load error:', err);
@@ -239,7 +242,12 @@ export const App: React.FC = () => {
       setActiveScenarioId(scenarioId);
       setDashboard(updatedDash);
 
-      const updatedDetail = await apiClient.getDomainDetail(activeAstronautId, selectedDomainId);
+      // Auto-select domain in ATTENTION/CRITICAL for the new scenario, or default to cardiovascular
+      const attentionDom = updatedDash.domains?.find((d) => d.status === 'ATTENTION' || d.status === 'CRITICAL');
+      const targetDomain: DomainId = attentionDom ? attentionDom.domain_id : 'cardiovascular';
+      setSelectedDomainId(targetDomain);
+
+      const updatedDetail = await apiClient.getDomainDetail(activeAstronautId, targetDomain);
       setActiveDomainDetail(updatedDetail);
 
       const scName =
@@ -593,6 +601,8 @@ export const App: React.FC = () => {
                 domain={environmentalDomains[0]}
                 isSelected={selectedDomainId === 'environment_eclss'}
                 onSelect={handleSelectDomain}
+                findings={dashboard.findings}
+                detail={selectedDomainId === 'environment_eclss' ? activeDomainDetail : null}
               />
             </div>
 

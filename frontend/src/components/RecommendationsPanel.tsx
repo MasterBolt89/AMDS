@@ -83,7 +83,7 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
           minWidth: 0,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, flex: 1, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, flex: 1, overflow: 'hidden', paddingRight: '16px' }}>
           <ShieldAlert size={15} color="#FBBF24" style={{ flexShrink: 0 }} />
           <h2
             style={{

@@ -39,6 +39,7 @@ class DomainEvaluation:
         baseline_mean: float,
         baseline_std: float,
         valid_sample_count: int,
+        headline_unit: str = "",
     ):
         self.domain_id = domain_id
         self.status = status
@@ -51,6 +52,7 @@ class DomainEvaluation:
         self.baseline_mean = baseline_mean
         self.baseline_std = baseline_std
         self.valid_sample_count = valid_sample_count
+        self.headline_unit = headline_unit
 
 
 def evaluate_domain(
@@ -129,6 +131,7 @@ def evaluate_domain(
             baseline_mean=baseline.mean,
             baseline_std=baseline.std_dev,
             valid_sample_count=baseline.sample_count,
+            headline_unit=latest_valid.unit,
         )
 
     # Check 2: Freshness cadence check against reference_timestamp
@@ -149,11 +152,15 @@ def evaluate_domain(
             baseline_mean=baseline.mean,
             baseline_std=baseline.std_dev,
             valid_sample_count=baseline.sample_count,
+            headline_unit=latest_valid.unit,
         )
 
     # Check 3: Statistical Drift Detection (|Z| >= 2.0)
     current_val = latest_valid.value
     z = compute_z_score(current_val, baseline.mean, baseline.std_dev)
+
+    baseline_desc = "habitat 14-day rolling baseline" if domain_id == DomainId.ENVIRONMENT_ECLSS else "14-day personal baseline"
+    baseline_dist_desc = "expected habitat baseline distribution" if domain_id == DomainId.ENVIRONMENT_ECLSS else "expected personal baseline distribution"
 
     if abs(z) >= 2.0:
         direction = "above" if z > 0 else "below"
@@ -163,7 +170,7 @@ def evaluate_domain(
             status=AssessmentStatus.ATTENTION,
             status_reason=(
                 f"Statistical baseline drift detected: {abs(z)} standard deviations {direction} "
-                f"14-day personal baseline (delta: {delta_val} {latest_valid.unit})."
+                f"{baseline_desc} (delta: {delta_val} {latest_valid.unit})."
             ),
             completeness_pct=completeness_pct,
             last_updated=last_updated,
@@ -173,12 +180,13 @@ def evaluate_domain(
             baseline_mean=baseline.mean,
             baseline_std=baseline.std_dev,
             valid_sample_count=baseline.sample_count,
+            headline_unit=latest_valid.unit,
         )
 
     return DomainEvaluation(
         domain_id=domain_id,
         status=AssessmentStatus.NORMAL,
-        status_reason="Telemetry is fresh and within expected personal baseline distribution (|Z| < 2.0).",
+        status_reason=f"Telemetry is fresh and within {baseline_dist_desc} (|Z| < 2.0).",
         completeness_pct=completeness_pct,
         last_updated=last_updated,
         headline_metric=headline_metric,
@@ -187,5 +195,6 @@ def evaluate_domain(
         baseline_mean=baseline.mean,
         baseline_std=baseline.std_dev,
         valid_sample_count=baseline.sample_count,
+        headline_unit=latest_valid.unit,
     )
 
