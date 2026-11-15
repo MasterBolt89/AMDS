@@ -15,8 +15,8 @@ export const FindingsPanel: React.FC<FindingsPanelProps> = ({ findings, onSelect
         backgroundColor: '#0C101A',
         border: '1px solid #1E293B',
         borderRadius: '2px',
-        padding: '14px 16px',
-        marginBottom: '16px',
+        padding: '10px 12px',
+        marginBottom: 0,
       }}
     >
       {/* Panel Header */}
@@ -26,15 +26,15 @@ export const FindingsPanel: React.FC<FindingsPanelProps> = ({ findings, onSelect
           alignItems: 'center',
           justifyContent: 'space-between',
           borderBottom: '1px solid #1E293B',
-          paddingBottom: '10px',
-          marginBottom: '12px',
+          paddingBottom: '6px',
+          marginBottom: '8px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <GitMerge size={15} color="#38BDF8" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <GitMerge size={14} color="#38BDF8" />
           <h2
             style={{
-              fontSize: '12px',
+              fontSize: '11px',
               fontWeight: 800,
               margin: 0,
               letterSpacing: '0.04em',
@@ -48,7 +48,7 @@ export const FindingsPanel: React.FC<FindingsPanelProps> = ({ findings, onSelect
         </div>
         <div
           style={{
-            fontSize: '9px',
+            fontSize: '8.5px',
             color: '#64748B',
             fontFamily: "'JetBrains Mono', monospace",
             textTransform: 'uppercase',
@@ -61,17 +61,17 @@ export const FindingsPanel: React.FC<FindingsPanelProps> = ({ findings, onSelect
       {findings.length === 0 ? (
         <div
           style={{
-            padding: '20px',
+            padding: '16px',
             textAlign: 'center',
             color: '#64748B',
-            fontSize: '11px',
+            fontSize: '10.5px',
             fontFamily: "'JetBrains Mono', monospace",
           }}
         >
           No active cross-domain prognostic alerts. All telemetry cross-correlations nominal.
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {findings.map((f) => {
             const fId = f.finding_id || (f as any).id;
             const evidenceType =
@@ -91,7 +91,7 @@ export const FindingsPanel: React.FC<FindingsPanelProps> = ({ findings, onSelect
                   border: '1px solid #1E293B',
                   borderLeft: `3px solid ${borderAccent}`,
                   borderRadius: '2px',
-                  padding: '12px 14px',
+                  padding: '8px 10px',
                 }}
               >
                 {/* Finding ID, Title & Pills */}
@@ -101,37 +101,37 @@ export const FindingsPanel: React.FC<FindingsPanelProps> = ({ findings, onSelect
                     flexWrap: 'wrap',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    gap: '6px',
-                    marginBottom: '8px',
+                    gap: '4px',
+                    marginBottom: '5px',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span
                       style={{
                         fontFamily: "'JetBrains Mono', monospace",
-                        fontSize: '10px',
+                        fontSize: '9.5px',
                         color: '#38BDF8',
                         fontWeight: 700,
                         backgroundColor: '#0C101A',
-                        padding: '1px 6px',
+                        padding: '1px 5px',
                         border: '1px solid #1E293B',
                         borderRadius: '2px',
                       }}
                     >
                       {fId}
                     </span>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#F8FAFC' }}>
+                    <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#F8FAFC' }}>
                       {f.title}
                     </span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <EvidenceBadge type={evidenceType} />
                     <StatusBadge status={severity} size="sm" />
                   </div>
                 </div>
 
                 {/* What Changed */}
-                <div style={{ fontSize: '11px', color: '#CBD5E1', lineHeight: '1.4', marginBottom: '6px' }}>
+                <div style={{ fontSize: '10.5px', color: '#CBD5E1', lineHeight: '1.35', marginBottom: '4px' }}>
                   <span style={{ color: '#94A3B8', fontWeight: 700 }}>WHAT CHANGED: </span>
                   {f.what_changed || f.summary}
                 </div>
@@ -139,14 +139,14 @@ export const FindingsPanel: React.FC<FindingsPanelProps> = ({ findings, onSelect
                 {/* Why It Matters */}
                 <div
                   style={{
-                    fontSize: '11px',
+                    fontSize: '10px',
                     color: '#94A3B8',
-                    lineHeight: '1.4',
+                    lineHeight: '1.35',
                     backgroundColor: '#0C101A',
-                    padding: '6px 8px',
+                    padding: '5px 7px',
                     borderLeft: `2px solid ${borderAccent}`,
                     borderRadius: '2px',
-                    marginBottom: '8px',
+                    marginBottom: '5px',
                   }}
                 >
                   <span style={{ color: '#F8FAFC', fontWeight: 700 }}>WHY IT MATTERS: </span>
@@ -158,13 +158,13 @@ export const FindingsPanel: React.FC<FindingsPanelProps> = ({ findings, onSelect
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '6px',
-                    fontSize: '9px',
+                    gap: '5px',
+                    fontSize: '8.5px',
                     color: '#64748B',
                     fontFamily: "'JetBrains Mono', monospace",
                   }}
                 >
-                  <BookOpen size={10} color="#64748B" />
+                  <BookOpen size={9} color="#64748B" />
                   <span>REF: {refSource}</span>
                 </div>
               </div>

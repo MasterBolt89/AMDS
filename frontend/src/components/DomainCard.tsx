@@ -264,7 +264,7 @@ export const DomainCard: React.FC<DomainCardProps> = ({ domain, isSelected = fal
         cursor: 'pointer',
         transition: 'background-color 0.12s ease',
         position: 'relative',
-        minHeight: '100px',
+        minHeight: '92px',
         outline: isSelected ? `1px solid ${accentBarColor}` : 'none',
         zIndex: isSelected ? 2 : 1,
       }}
@@ -284,22 +284,22 @@ export const DomainCard: React.FC<DomainCardProps> = ({ domain, isSelected = fal
         }}
       />
 
-      <div style={{ padding: '7px 9px 4px 9px', flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+      <div style={{ padding: '6px 8px 3px 8px', flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         {/* Header Row: Locked Left Title + Tooltip, Locked Right Status Dot */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '6px',
-            marginBottom: '3px',
+            gap: '4px',
+            marginBottom: '2px',
             minWidth: 0,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0, overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '3px', minWidth: 0, overflow: 'hidden' }}>
             <span
               style={{
-                fontSize: '10px',
+                fontSize: '9.5px',
                 fontWeight: 800,
                 color: isSelected ? '#38BDF8' : '#F1F5F9',
                 letterSpacing: '0.04em',
@@ -314,7 +314,7 @@ export const DomainCard: React.FC<DomainCardProps> = ({ domain, isSelected = fal
               {shortName}
             </span>
             <div className="tooltip-container" onClick={(e) => e.stopPropagation()}>
-              <Info size={11} color="#64748B" style={{ cursor: 'help', flexShrink: 0 }} />
+              <Info size={10} color="#64748B" style={{ cursor: 'help', flexShrink: 0 }} />
               <div className="tooltip-content">
                 <div style={{ fontWeight: 700, color: '#38BDF8', marginBottom: '2px' }}>
                   {domain.display_name} Scope Notice
@@ -330,7 +330,7 @@ export const DomainCard: React.FC<DomainCardProps> = ({ domain, isSelected = fal
               display: 'flex',
               alignItems: 'center',
               gap: '3px',
-              fontSize: '9px',
+              fontSize: '8.5px',
               fontFamily: "'JetBrains Mono', monospace",
               fontWeight: 700,
               whiteSpace: 'nowrap',
@@ -357,7 +357,7 @@ export const DomainCard: React.FC<DomainCardProps> = ({ domain, isSelected = fal
           </div>
         </div>
 
-        {/* Center: Large 3XL Tabular Monospace Reading OR Insufficient Data Gap */}
+        {/* Center: Large Tabular Monospace Reading OR Insufficient Data Gap */}
         {parsed === null ? (
           <div
             data-testid="insufficient-data-notice"
@@ -365,7 +365,7 @@ export const DomainCard: React.FC<DomainCardProps> = ({ domain, isSelected = fal
               backgroundColor: '#07090F',
               border: '1px dashed #475569',
               borderRadius: '0px',
-              padding: '4px 6px',
+              padding: '3px 6px',
               margin: 'auto 0',
             }}
           >
@@ -375,20 +375,20 @@ export const DomainCard: React.FC<DomainCardProps> = ({ domain, isSelected = fal
                 alignItems: 'center',
                 gap: '4px',
                 color: '#94A3B8',
-                fontSize: '9.5px',
+                fontSize: '9px',
                 fontWeight: 700,
                 fontFamily: "'JetBrains Mono', monospace",
                 marginBottom: '1px',
               }}
             >
-              <AlertCircle size={10} color="#94A3B8" />
+              <AlertCircle size={9} color="#94A3B8" />
               SURVEILLANCE GAP DETECTED
             </div>
             <div
               style={{
-                fontSize: '9px',
+                fontSize: '8.5px',
                 color: '#CBD5E1',
-                lineHeight: '1.25',
+                lineHeight: '1.2',
                 fontStyle: 'italic',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
@@ -409,17 +409,17 @@ export const DomainCard: React.FC<DomainCardProps> = ({ domain, isSelected = fal
               minWidth: 0,
             }}
           >
-            {/* Primary Tabular Reading & Unit (Large text-3xl font-semibold tabular-nums) */}
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px' }}>
+            {/* Primary Tabular Reading & Unit */}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
               <span
                 data-testid="headline-value"
                 style={{
-                  fontSize: '26px',
+                  fontSize: '23px',
                   fontWeight: 700,
                   color: isCritical ? '#EF4444' : isAttention ? '#FBBF24' : '#F8FAFC',
                   fontFamily: "'JetBrains Mono', monospace",
                   fontVariantNumeric: 'tabular-nums',
-                  lineHeight: '1.1',
+                  lineHeight: '1.05',
                 }}
               >
                 {parsed.value}
@@ -428,7 +428,7 @@ export const DomainCard: React.FC<DomainCardProps> = ({ domain, isSelected = fal
                 <span
                   data-testid="headline-unit"
                   style={{
-                    fontSize: '11px',
+                    fontSize: '10.5px',
                     color: '#94A3B8',
                     fontWeight: 600,
                     fontFamily: "'JetBrains Mono', monospace",
@@ -439,51 +439,61 @@ export const DomainCard: React.FC<DomainCardProps> = ({ domain, isSelected = fal
               )}
             </div>
 
-            {/* Single Clean Line Secondary Metadata: RESTING HR · +0% vs baseline · Baseline: 60 bpm */}
+            {/* Metric Label Line */}
+            <div
+              data-testid="headline-label"
+              style={{
+                color: '#94A3B8',
+                fontSize: '8.5px',
+                textTransform: 'uppercase',
+                fontWeight: 600,
+                letterSpacing: '0.02em',
+                fontFamily: "'JetBrains Mono', monospace",
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                marginTop: '1px',
+              }}
+              title={parsed.label}
+            >
+              {parsed.label}
+            </div>
+
+            {/* Delta & Baseline Info Line */}
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '4px',
-                fontSize: '9.5px',
+                gap: '3px',
+                fontSize: '8px',
                 fontFamily: "'JetBrains Mono', monospace",
                 color: '#64748B',
-                marginTop: '2px',
+                marginTop: '1px',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
               }}
             >
-              <span
-                data-testid="headline-label"
-                style={{
-                  color: '#94A3B8',
-                  textTransform: 'uppercase',
-                  fontWeight: 600,
-                  letterSpacing: '0.03em',
-                }}
-              >
-                {parsed.label}
-              </span>
               {parsed.delta_from_baseline_pct !== null && (
-                <>
-                  <span>·</span>
-                  <span
-                    data-testid="headline-delta"
-                    style={{
-                      color: isAttention ? '#FBBF24' : '#34D399',
-                      fontWeight: 700,
-                    }}
-                  >
-                    {parsed.delta_from_baseline_pct > 0 ? '+' : ''}
-                    {parsed.delta_from_baseline_pct}% vs baseline
-                  </span>
-                </>
+                <span
+                  data-testid="headline-delta"
+                  style={{
+                    color: isAttention ? '#FBBF24' : '#34D399',
+                    fontWeight: 700,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {parsed.delta_from_baseline_pct > 0 ? '+' : ''}
+                  {parsed.delta_from_baseline_pct}% vs baseline
+                </span>
               )}
               {parsed.baseline_mean !== null && (
                 <>
                   <span>·</span>
-                  <span data-testid="headline-baseline" style={{ color: '#64748B' }}>
+                  <span
+                    data-testid="headline-baseline"
+                    style={{ color: '#64748B', whiteSpace: 'nowrap' }}
+                  >
                     Baseline: {parsed.baseline_mean} {parsed.unit}
                   </span>
                 </>
@@ -498,12 +508,12 @@ export const DomainCard: React.FC<DomainCardProps> = ({ domain, isSelected = fal
         data-testid="domain-completeness"
         style={{
           borderTop: '1px solid #1E293B',
-          padding: '3px 9px',
+          padding: '2px 8px',
           backgroundColor: '#080B12',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          fontSize: '9px',
+          fontSize: '8.5px',
           color: '#64748B',
           fontFamily: "'JetBrains Mono', monospace",
         }}

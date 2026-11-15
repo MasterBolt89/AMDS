@@ -216,10 +216,10 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
         backgroundColor: '#0C101A',
         border: '1px solid #1E293B',
         borderRadius: '0px',
-        padding: '10px 12px 8px 12px',
+        padding: '8px 10px 6px 10px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '6px',
+        gap: '5px',
       }}
     >
       {/* Gradient Definitions */}
@@ -337,10 +337,10 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
         </div>
       </div>
 
-      {/* Main Time-Series LineChart (min-height ~190px) */}
-      <div style={{ width: '100%', height: '190px', backgroundColor: '#07090F', padding: '4px 6px 0 0' }}>
+      {/* Main Time-Series LineChart (height ~175px) */}
+      <div style={{ width: '100%', height: '175px', backgroundColor: '#07090F', padding: '2px 6px 0 0' }}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 6, right: 15, left: -10, bottom: 0 }}>
+          <LineChart data={chartData} margin={{ top: 4, right: 15, left: -10, bottom: 0 }}>
             <CartesianGrid stroke="#1E293B" strokeDasharray="2 2" vertical={false} />
             <XAxis
               dataKey="timeLabel"
@@ -404,12 +404,12 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
       {/* Scope Notice Banner */}
       <div
         style={{
-          fontSize: '9.5px',
+          fontSize: '9px',
           color: '#94A3B8',
-          lineHeight: '1.3',
+          lineHeight: '1.25',
           backgroundColor: '#07090F',
           borderLeft: '2px solid #38BDF8',
-          padding: '4px 8px',
+          padding: '3px 6px',
           fontFamily: "'JetBrains Mono', monospace",
           whiteSpace: 'nowrap',
           overflow: 'hidden',

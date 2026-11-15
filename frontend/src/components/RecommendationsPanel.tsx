@@ -51,7 +51,7 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
         backgroundColor: '#0C101A',
         border: '1px solid #1E293B',
         borderRadius: '2px',
-        padding: '14px 16px',
+        padding: '10px 12px',
       }}
     >
       {/* Panel Header */}
@@ -61,15 +61,15 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
           alignItems: 'center',
           justifyContent: 'space-between',
           borderBottom: '1px solid #1E293B',
-          paddingBottom: '10px',
-          marginBottom: '12px',
+          paddingBottom: '6px',
+          marginBottom: '8px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <ShieldAlert size={15} color="#FBBF24" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <ShieldAlert size={14} color="#FBBF24" />
           <h2
             style={{
-              fontSize: '12px',
+              fontSize: '11px',
               fontWeight: 800,
               margin: 0,
               letterSpacing: '0.04em',
@@ -83,7 +83,7 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
         </div>
         <div
           style={{
-            fontSize: '9px',
+            fontSize: '8.5px',
             color: '#64748B',
             fontFamily: "'JetBrains Mono', monospace",
             textTransform: 'uppercase',
@@ -96,17 +96,17 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
       {recommendations.length === 0 ? (
         <div
           style={{
-            padding: '20px',
+            padding: '16px',
             textAlign: 'center',
             color: '#64748B',
-            fontSize: '11px',
+            fontSize: '10.5px',
             fontFamily: "'JetBrains Mono', monospace",
           }}
         >
           No active clinical protocols pending. All surveillance values within nominal limits.
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {recommendations.map((rec) => {
             const rId = rec.recommendation_id || (rec as any).id;
             const isAcknowledged =
@@ -121,7 +121,7 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
                   backgroundColor: '#07090F',
                   border: isImproved ? '1px solid #059669' : '1px solid #1E293B',
                   borderRadius: '2px',
-                  padding: '12px 14px',
+                  padding: '9px 11px',
                 }}
               >
                 {/* Header: ID, Title & Outcome Badge */}
@@ -131,26 +131,26 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
                     flexWrap: 'wrap',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    gap: '6px',
-                    marginBottom: '10px',
+                    gap: '4px',
+                    marginBottom: '6px',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <span
                       style={{
                         fontFamily: "'JetBrains Mono', monospace",
-                        fontSize: '10px',
+                        fontSize: '9.5px',
                         color: '#FBBF24',
                         fontWeight: 700,
                         backgroundColor: '#451A03',
-                        padding: '1px 6px',
+                        padding: '1px 5px',
                         border: '1px solid #78350F',
                         borderRadius: '2px',
                       }}
                     >
                       {rId}
                     </span>
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#F8FAFC' }}>
+                    <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#F8FAFC' }}>
                       {rec.title || `Intervention for Finding ${rec.finding_id}`}
                     </span>
                   </div>
@@ -158,33 +158,33 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
                   {isImproved && (
                     <span
                       style={{
-                        fontSize: '10px',
+                        fontSize: '9px',
                         fontFamily: "'JetBrains Mono', monospace",
                         fontWeight: 700,
-                        padding: '2px 6px',
+                        padding: '1px 5px',
                         borderRadius: '2px',
                         backgroundColor: '#064E3B',
                         color: '#34D399',
                         border: '1px solid #059669',
                         display: 'inline-flex',
                         alignItems: 'center',
-                        gap: '4px',
+                        gap: '3px',
                       }}
                     >
-                      <TrendingUp size={11} />
+                      <TrendingUp size={10} />
                       OUTCOME: IMPROVED
                     </span>
                   )}
                 </div>
 
-                {/* Sleek Single-Line Stage Progress Bar (Replacing Large 01-05 Chevron Blocks) */}
+                {/* Sleek Stage Progress Bar */}
                 <div
                   style={{
                     backgroundColor: '#0C101A',
                     border: '1px solid #1E293B',
                     borderRadius: '2px',
-                    padding: '8px 10px',
-                    marginBottom: '10px',
+                    padding: '5px 8px',
+                    marginBottom: '6px',
                   }}
                 >
                   <div
@@ -192,10 +192,10 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      fontSize: '10px',
+                      fontSize: '9px',
                       fontFamily: "'JetBrains Mono', monospace",
                       fontWeight: 700,
-                      marginBottom: '5px',
+                      marginBottom: '3px',
                     }}
                   >
                     <span style={{ color: isAcknowledged ? '#34D399' : '#38BDF8' }}>
@@ -205,10 +205,10 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
                       {isAcknowledged ? '5/5' : '4/5'}
                     </span>
                   </div>
-                  {/* Slim 4px Progress Bar */}
+                  {/* Slim 3px Progress Bar */}
                   <div
                     style={{
-                      height: '4px',
+                      height: '3px',
                       width: '100%',
                       backgroundColor: '#1E293B',
                       borderRadius: '1px',
@@ -227,11 +227,11 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
                 </div>
 
                 {/* Action Directive */}
-                <div style={{ marginBottom: '8px' }}>
-                  <div style={{ fontSize: '9px', color: '#64748B', textTransform: 'uppercase', fontFamily: "'JetBrains Mono', monospace", marginBottom: '2px' }}>
+                <div style={{ marginBottom: '6px' }}>
+                  <div style={{ fontSize: '8.5px', color: '#64748B', textTransform: 'uppercase', fontFamily: "'JetBrains Mono', monospace", marginBottom: '1px' }}>
                     Clinical Countermeasure Protocol
                   </div>
-                  <div style={{ fontSize: '12px', color: '#CBD5E1', lineHeight: '1.4' }}>
+                  <div style={{ fontSize: '11px', color: '#CBD5E1', lineHeight: '1.35' }}>
                     {rec.action_summary}
                   </div>
                 </div>
@@ -241,16 +241,16 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
                   style={{
                     backgroundColor: '#0C101A',
                     borderLeft: '2px solid #38BDF8',
-                    padding: '6px 8px',
+                    padding: '5px 7px',
                     borderRadius: '2px',
-                    marginBottom: '8px',
+                    marginBottom: '6px',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10px', color: '#38BDF8', fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", marginBottom: '2px' }}>
-                    <Radio size={11} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '9px', color: '#38BDF8', fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", marginBottom: '1px' }}>
+                    <Radio size={10} />
                     <span>MISSION COMMS PROTOCOL GUIDANCE</span>
                   </div>
-                  <div style={{ fontSize: '11px', color: '#94A3B8', lineHeight: '1.3' }}>
+                  <div style={{ fontSize: '10.5px', color: '#94A3B8', lineHeight: '1.3' }}>
                     {rec.consultation_guidance}
                   </div>
                 </div>
@@ -261,16 +261,16 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
                     backgroundColor: '#1C0E10',
                     border: '1px solid #7F1D1D',
                     borderLeft: '3px solid #EF4444',
-                    padding: '8px 10px',
+                    padding: '6px 8px',
                     borderRadius: '2px',
-                    marginBottom: '10px',
+                    marginBottom: '7px',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10px', color: '#EF4444', fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", marginBottom: '2px' }}>
-                    <AlertOctagon size={12} color="#EF4444" />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '9px', color: '#EF4444', fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", marginBottom: '1px' }}>
+                    <AlertOctagon size={11} color="#EF4444" />
                     <span>ESCALATE WHEN:</span>
                   </div>
-                  <div style={{ fontSize: '11px', color: '#FCA5A5', lineHeight: '1.35', fontWeight: 500 }}>
+                  <div style={{ fontSize: '10.5px', color: '#FCA5A5', lineHeight: '1.3', fontWeight: 500 }}>
                     {rec.escalate_when}
                   </div>
                 </div>
@@ -281,22 +281,22 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
                     style={{
                       backgroundColor: '#064E3B20',
                       border: '1px solid #059669',
-                      padding: '8px 10px',
+                      padding: '6px 8px',
                       borderRadius: '2px',
-                      fontSize: '11px',
+                      fontSize: '10.5px',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#34D399', fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", marginBottom: '3px' }}>
-                      <CheckCircle2 size={12} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#34D399', fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", marginBottom: '2px' }}>
+                      <CheckCircle2 size={11} />
                       <span>ACTION LOGGED & REASSESSMENT ENGAGED</span>
                     </div>
                     {rec.reassessment?.action_taken_note && (
-                      <div style={{ color: '#D1FAE5', fontStyle: 'italic', marginBottom: '4px' }}>
+                      <div style={{ color: '#D1FAE5', fontStyle: 'italic', marginBottom: '3px' }}>
                         "{rec.reassessment.action_taken_note}"
                       </div>
                     )}
                     {rec.reassessment?.acknowledged_at && (
-                      <div style={{ fontSize: '9px', color: '#6EE7B7', fontFamily: "'JetBrains Mono', monospace" }}>
+                      <div style={{ fontSize: '8.5px', color: '#6EE7B7', fontFamily: "'JetBrains Mono', monospace" }}>
                         Logged: {new Date(rec.reassessment.acknowledged_at).toUTCString()}
                       </div>
                     )}
@@ -304,10 +304,10 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
                 ) : (
                   <button
                     className="aero-btn aero-btn-primary"
-                    style={{ width: '100%', justifyContent: 'center', padding: '7px 12px', fontSize: '11px', fontWeight: 700 }}
+                    style={{ width: '100%', justifyContent: 'center', padding: '5px 10px', fontSize: '10.5px', fontWeight: 700 }}
                     onClick={() => handleOpenModal(rec)}
                   >
-                    <FileCheck2 size={13} />
+                    <FileCheck2 size={12} />
                     <span>Acknowledge & Log Action</span>
                   </button>
                 )}
