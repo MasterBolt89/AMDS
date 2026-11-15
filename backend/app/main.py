@@ -1,5 +1,6 @@
-"""NASA Space Apps Challenge 2026 — Astronaut Health Monitoring & Intelligence Engine.
+"""AMDS — Autonomous Medical Decision Support.
 
+NASA Space Apps Challenge 2026.
 FastAPI application entrypoint.
 """
 
@@ -24,8 +25,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 
 app = FastAPI(
-    title="NASA Astronaut Health Monitoring & Intelligence Engine",
-    description="Deterministic Health Intelligence and Multimodal Telemetry System for Long-Duration Space Missions.",
+    title="AMDS — Autonomous Medical Decision Support",
+    description="Autonomous Medical Decision Support: Deterministic Health Intelligence and Multimodal Telemetry System for Long-Duration Space Missions.",
     version="1.0.0",
     docs_url="/docs",
     openapi_url="/api/v1/openapi.json",
@@ -63,5 +64,5 @@ async def get_root_openapi() -> JSONResponse:
 @app.get("/health", tags=["Health"])
 async def healthcheck() -> dict[str, str]:
     """Basic healthcheck endpoint."""
-    return {"status": "HEALTHY", "system": "ASTRONAUT_HEALTH_INTELLIGENCE_ENGINE"}
+    return {"status": "HEALTHY", "system": "AMDS_HEALTH_INTELLIGENCE_ENGINE"}
 

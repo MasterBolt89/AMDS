@@ -2,13 +2,13 @@
 set -e
 
 # =====================================================================
-# 🚀 Astronaut Health Command Center - Unified Cross-Platform Launcher
+# 🚀 AMDS (Autonomous Medical Decision Support) - Unified Cross-Platform Launcher
 # NASA Space Apps Challenge 2026 (macOS & Linux)
 # Mirrors start-demo.bat
 # =====================================================================
 
 echo "====================================================================="
-echo "   🚀 Astronaut Health Command Center - Cross-Platform Launcher"
+echo "   🚀 AMDS — Autonomous Medical Decision Support Launcher"
 echo "   NASA Space Apps Challenge 2026"
 echo "====================================================================="
 echo ""

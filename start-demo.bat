@@ -1,10 +1,10 @@
 @echo off
 setlocal enabledelayedexpansion
 
-title NASA Space Apps 2026 - Launcher
+title AMDS - Autonomous Medical Decision Support Launcher
 
 echo =====================================================================
-echo    🚀 Astronaut Health Command Center - One-Click Launcher
+echo    🚀 AMDS — Autonomous Medical Decision Support
 echo    NASA Space Apps Challenge 2026
 echo =====================================================================
 echo.

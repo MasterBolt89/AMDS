@@ -1,7 +1,7 @@
 [project]
 name = "astronaut-health-backend"
 version = "0.1.0"
-description = "NASA Space Apps Challenge 2026 - Astronaut Health Monitoring & Deterministic Intelligence Backend"
+description = "NASA Space Apps Challenge 2026 - AMDS Autonomous Medical Decision Support Backend"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [

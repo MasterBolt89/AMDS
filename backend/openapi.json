@@ -1,8 +1,8 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "NASA Astronaut Health Monitoring & Intelligence Engine",
-    "description": "Deterministic Health Intelligence and Multimodal Telemetry System for Long-Duration Space Missions.",
+    "title": "AMDS \u2014 Autonomous Medical Decision Support",
+    "description": "Autonomous Medical Decision Support: Deterministic Health Intelligence and Multimodal Telemetry System for Long-Duration Space Missions.",
     "version": "1.0.0"
   },
   "paths": {
@@ -878,7 +878,14 @@
             "title": "Last Updated"
           },
           "headline_metric": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Headline Metric"
           },
           "status_reason": {
@@ -898,7 +905,6 @@
           "measurement_scope_notice",
           "status",
           "completeness_pct",
-          "headline_metric",
           "status_reason",
           "active_finding_count"
         ],

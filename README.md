@@ -1,4 +1,4 @@
-# 🚀 Project CosmoVitals — Astronaut Health Command Center
+# 🚀 AMDS — Autonomous Medical Decision Support
 ### Autonomous Multimodal Health & Operational Risk Intelligence for Deep Space Exploration
 **NASA Space Apps Challenge 2026**
 
@@ -6,7 +6,7 @@
 
 ## 🛰️ Mission Overview & Summary
 
-During long-duration deep-space missions—such as transit to Mars or lunar Artemis operations—communication delays (up to 22 minutes one-way) preclude real-time consultation with terrestrial flight surgeons. The **Astronaut Health Command Center** provides an autonomous, deterministic, closed-loop clinical and operational intelligence system designed to support astronaut self-sufficiency and flight surgeon situational awareness.
+During long-duration deep-space missions—such as transit to Mars or lunar Artemis operations—communication delays (up to 22 minutes one-way) preclude real-time consultation with terrestrial flight surgeons. The **AMDS (Autonomous Medical Decision Support)** platform provides an autonomous, deterministic, closed-loop clinical and operational intelligence system designed to support astronaut self-sufficiency and flight surgeon situational awareness.
 
 The platform executes a rigorous **closed-loop clinical workflow**:
 ```text
@@ -35,7 +35,7 @@ The system continuously assesses **9 physiological and environmental domains** a
 
 ## 🛡️ Clinical Epistemology & Safety Guardrails
 
-Space medicine demands strict epistemic honesty. The Astronaut Health Command Center is architected around foundational clinical safety principles:
+Space medicine demands strict epistemic honesty. The AMDS platform is architected around foundational clinical safety principles:
 
 ### 1. Deterministic Assessment Engine (Zero LLM Hallucinations)
 Diagnostic evaluations, baseline drift calculations, and countermeasure triggers are computed through deterministic statistical algorithms and validated aerospace medicine protocols (NASA STD-3001, NASA HRP). Generative AI is never permitted to invent clinical thresholds, forge diagnoses, or bypass safety boundaries.
@@ -245,4 +245,4 @@ The command center includes 4 pre-seeded clinical and operational scenarios cent
 
 ---
 
-**Astronaut Health Command Center** — *Built with precision for the human exploration of the Moon, Mars, and beyond.*
+**AMDS (Autonomous Medical Decision Support)** — *Built with precision for the human exploration of the Moon, Mars, and beyond.*

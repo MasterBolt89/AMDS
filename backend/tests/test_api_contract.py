@@ -11,7 +11,7 @@ async def test_openapi_specs_accessible(client: AsyncClient):
     res1 = await client.get("/api/v1/openapi.json")
     assert res1.status_code == 200
     spec = res1.json()
-    assert spec["info"]["title"] == "NASA Astronaut Health Monitoring & Intelligence Engine"
+    assert spec["info"]["title"] == "AMDS — Autonomous Medical Decision Support"
     assert "/api/v1/astronauts/{astronaut_id}/dashboard" in spec["paths"]
 
     res2 = await client.get("/openapi.json")

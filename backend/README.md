@@ -1,5 +1,5 @@
-# NASA Space Apps Challenge 2026 — Astronaut Health Monitoring System
-## Backend & Deterministic Health Intelligence Engine
+# AMDS — Autonomous Medical Decision Support
+## Backend & Deterministic Health Intelligence Engine — NASA Space Apps 2026
 
 This service powers the health intelligence layer for long-duration spaceflight missions (ISS Low Earth Orbit and Autonomous Mars Transit). It implements strict scientific safety protocols, zero-variance statistical baseline drift detection, cadence-aware data freshness monitoring, closed-loop intervention reassessment, and event-based operational risk logging.
 
