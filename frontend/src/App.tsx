@@ -44,6 +44,107 @@ export const App: React.FC = () => {
   const [isRisksModalOpen, setIsRisksModalOpen] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  // Splitter Resizer States (IDE-style draggable panes)
+  const [leftColWidthPct, setLeftColWidthPct] = useState<number>(60);
+  const [isDraggingCol, setIsDraggingCol] = useState<boolean>(false);
+  const [rightTopHeightPct, setRightTopHeightPct] = useState<number>(50);
+  const [isDraggingRow, setIsDraggingRow] = useState<boolean>(false);
+
+  const mainContainerRef = useRef<HTMLDivElement>(null);
+  const rightContainerRef = useRef<HTMLDivElement>(null);
+
+  // Column Drag Handler (Left/Right width resize)
+  useEffect(() => {
+    if (!isDraggingCol) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const mainEl = mainContainerRef.current;
+      if (!mainEl) return;
+      const rect = mainEl.getBoundingClientRect();
+      const newPct = ((e.clientX - rect.left) / rect.width) * 100;
+      if (newPct >= 35 && newPct <= 75) {
+        setLeftColWidthPct(Math.round(newPct * 10) / 10);
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!e.touches[0]) return;
+      const mainEl = mainContainerRef.current;
+      if (!mainEl) return;
+      const rect = mainEl.getBoundingClientRect();
+      const newPct = ((e.touches[0].clientX - rect.left) / rect.width) * 100;
+      if (newPct >= 35 && newPct <= 75) {
+        setLeftColWidthPct(Math.round(newPct * 10) / 10);
+      }
+    };
+
+    const handleEnd = () => {
+      setIsDraggingCol(false);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleEnd);
+    window.addEventListener('touchmove', handleTouchMove);
+    window.addEventListener('touchend', handleEnd);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleEnd);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleEnd);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isDraggingCol]);
+
+  // Row Drag Handler (Top/Bottom right box height resize)
+  useEffect(() => {
+    if (!isDraggingRow) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const rightEl = rightContainerRef.current;
+      if (!rightEl) return;
+      const rect = rightEl.getBoundingClientRect();
+      const newPct = ((e.clientY - rect.top) / rect.height) * 100;
+      if (newPct >= 20 && newPct <= 80) {
+        setRightTopHeightPct(Math.round(newPct * 10) / 10);
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!e.touches[0]) return;
+      const rightEl = rightContainerRef.current;
+      if (!rightEl) return;
+      const rect = rightEl.getBoundingClientRect();
+      const newPct = ((e.touches[0].clientY - rect.top) / rect.height) * 100;
+      if (newPct >= 20 && newPct <= 80) {
+        setRightTopHeightPct(Math.round(newPct * 10) / 10);
+      }
+    };
+
+    const handleEnd = () => {
+      setIsDraggingRow(false);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleEnd);
+    window.addEventListener('touchmove', handleTouchMove);
+    window.addEventListener('touchend', handleEnd);
+    document.body.style.cursor = 'row-resize';
+    document.body.style.userSelect = 'none';
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleEnd);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleEnd);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isDraggingRow]);
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => {
@@ -381,23 +482,24 @@ export const App: React.FC = () => {
         />
       ) : (
         <main
+          ref={mainContainerRef}
           style={{
             width: '100%',
             maxWidth: 'none',
             padding: '8px 12px',
-            display: 'grid',
-            gridTemplateColumns: 'minmax(0, 60%) minmax(0, 40%)',
-            gap: '12px',
+            display: 'flex',
             height: 'calc(100vh - 76px)',
             boxSizing: 'border-box',
             overflow: 'hidden',
+            gap: '0px',
           }}
         >
           {/* ========================================================================= */}
-          {/* LEFT PANE (60% Width): 9-Domain Matrix + Embedded Live Telemetry Chart */}
+          {/* LEFT PANE (Dynamic Width %): 9-Domain Matrix + Embedded Live Telemetry Chart */}
           {/* ========================================================================= */}
           <div
             style={{
+              width: `calc(${leftColWidthPct}% - 6px)`,
               display: 'flex',
               flexDirection: 'column',
               height: '100%',
@@ -405,6 +507,7 @@ export const App: React.FC = () => {
               minWidth: 0,
               gap: '8px',
               justifyContent: 'space-between',
+              paddingRight: '6px',
             }}
           >
             {/* Section 1 Header */}
@@ -490,25 +593,136 @@ export const App: React.FC = () => {
           </div>
 
           {/* ========================================================================= */}
-          {/* RIGHT PANE (40% Width, Split 50/50): Findings & Protocol Queue */}
+          {/* VERTICAL COLUMN SPLITTER (Draggable left/right resizer) */}
           {/* ========================================================================= */}
           <div
+            data-testid="column-resizer"
+            className={`splitter-col ${isDraggingCol ? 'active' : ''}`}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              setIsDraggingCol(true);
+            }}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              setIsDraggingCol(true);
+            }}
             style={{
+              width: '12px',
+              cursor: 'col-resize',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'relative',
+              zIndex: 30,
+              flexShrink: 0,
+              margin: '0 -2px',
+            }}
+            title="Drag left/right to resize console panels"
+          >
+            <div
+              style={{
+                width: '2px',
+                height: '100%',
+                backgroundColor: isDraggingCol ? '#38BDF8' : '#1E293B',
+                transition: 'background-color 0.15s ease',
+              }}
+            />
+            {/* Grab handle indicator */}
+            <div
+              style={{
+                position: 'absolute',
+                width: '4px',
+                height: '32px',
+                borderRadius: '2px',
+                backgroundColor: isDraggingCol ? '#38BDF8' : '#334155',
+                transition: 'all 0.15s ease',
+              }}
+            />
+          </div>
+
+          {/* ========================================================================= */}
+          {/* RIGHT PANE (Remaining Width, Draggable Vertical Split): Findings & Protocols */}
+          {/* ========================================================================= */}
+          <div
+            ref={rightContainerRef}
+            style={{
+              width: `calc(${100 - leftColWidthPct}% - 6px)`,
+              flex: 1,
               display: 'flex',
               flexDirection: 'column',
               height: '100%',
               minHeight: 0,
               minWidth: 0,
-              gap: '10px',
+              paddingLeft: '6px',
             }}
           >
-            {/* Top 50%: Cross-Domain Findings & Action Queue */}
-            <div style={{ flex: '1 1 50%', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+            {/* Top Box: Cross-Domain Findings & Action Queue */}
+            <div
+              style={{
+                height: `calc(${rightTopHeightPct}% - 6px)`,
+                minHeight: 0,
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
               <FindingsPanel findings={dashboard.findings} onSelectDomain={handleSelectDomain} />
             </div>
 
-            {/* Bottom 50%: Recommended Protocol & Escalation Trigger */}
-            <div style={{ flex: '1 1 50%', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+            {/* HORIZONTAL ROW SPLITTER (Draggable up/down resizer between Findings and Recommendations) */}
+            <div
+              data-testid="row-resizer"
+              className={`splitter-row ${isDraggingRow ? 'active' : ''}`}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                setIsDraggingRow(true);
+              }}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                setIsDraggingRow(true);
+              }}
+              style={{
+                height: '12px',
+                cursor: 'row-resize',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                position: 'relative',
+                zIndex: 30,
+                flexShrink: 0,
+                margin: '0',
+              }}
+              title="Drag up/down to resize Findings vs Recommendations"
+            >
+              <div
+                style={{
+                  height: '2px',
+                  width: '100%',
+                  backgroundColor: isDraggingRow ? '#38BDF8' : '#1E293B',
+                  transition: 'background-color 0.15s ease',
+                }}
+              />
+              {/* Grab handle indicator */}
+              <div
+                style={{
+                  position: 'absolute',
+                  width: '32px',
+                  height: '4px',
+                  borderRadius: '2px',
+                  backgroundColor: isDraggingRow ? '#38BDF8' : '#334155',
+                  transition: 'all 0.15s ease',
+                }}
+              />
+            </div>
+
+            {/* Bottom Box: Recommended Protocol & Escalation Trigger */}
+            <div
+              style={{
+                height: `calc(${100 - rightTopHeightPct}% - 6px)`,
+                minHeight: 0,
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
               <RecommendationsPanel
                 recommendations={dashboard.recommendations}
                 astronautId={activeAstronautId}

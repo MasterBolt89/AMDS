@@ -72,11 +72,11 @@ export const Header: React.FC<HeaderProps> = ({
               fontFamily: "'JetBrains Mono', monospace",
             }}
           >
-            NASA AMPCS
+            NASA AMDS
           </div>
           <div>
             <div style={{ fontSize: '13px', fontWeight: 800, letterSpacing: '0.02em', color: '#F8FAFC', lineHeight: '1.2' }}>
-              AEROSPACE MEDICAL PROGNOSTICS & FLIGHT-SURGEON CONSOLE
+              AUTONOMOUS MEDICAL DECISION SUPPORT CONSOLE
             </div>
           </div>
 
