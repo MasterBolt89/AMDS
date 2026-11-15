@@ -44,46 +44,6 @@ export const App: React.FC = () => {
   const [isRisksModalOpen, setIsRisksModalOpen] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Synchronized Layout Height for Left/Right Split Pane
-  const leftPaneRef = useRef<HTMLDivElement>(null);
-  const [leftPaneHeight, setLeftPaneHeight] = useState<number | null>(null);
-
-  useEffect(() => {
-    const el = leftPaneRef.current;
-    if (!el) return;
-
-    const updateHeight = () => {
-      if (typeof el.getBoundingClientRect === 'function') {
-        const rect = el.getBoundingClientRect();
-        if (rect && rect.height > 0) {
-          setLeftPaneHeight(Math.round(rect.height));
-        }
-      }
-    };
-
-    updateHeight();
-
-    let observer: ResizeObserver | null = null;
-    if (typeof ResizeObserver !== 'undefined') {
-      observer = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          const height = Math.round(entry.contentRect.height);
-          if (height > 0) {
-            setLeftPaneHeight(height);
-          }
-        }
-      });
-      observer.observe(el);
-    }
-
-    window.addEventListener('resize', updateHeight);
-
-    return () => {
-      if (observer) observer.disconnect();
-      window.removeEventListener('resize', updateHeight);
-    };
-  }, [dashboard, selectedDomainId, isDetailExpanded]);
-
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => {
@@ -422,35 +382,47 @@ export const App: React.FC = () => {
       ) : (
         <main
           style={{
+            width: '100%',
+            maxWidth: 'none',
             padding: '8px 12px',
-            maxWidth: '1600px',
-            margin: '0 auto',
             display: 'grid',
-            gridTemplateColumns: 'minmax(0, 62%) minmax(0, 38%)',
-            gap: '10px',
-            alignItems: 'start',
+            gridTemplateColumns: 'minmax(0, 60%) minmax(0, 40%)',
+            gap: '12px',
+            height: 'calc(100vh - 76px)',
+            boxSizing: 'border-box',
+            overflow: 'hidden',
           }}
         >
           {/* ========================================================================= */}
-          {/* LEFT PANE (62% Width): 9-Domain Matrix + Embedded Live Telemetry Chart */}
+          {/* LEFT PANE (60% Width): 9-Domain Matrix + Embedded Live Telemetry Chart */}
           {/* ========================================================================= */}
-          <div ref={leftPaneRef} style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              height: '100%',
+              minHeight: 0,
+              minWidth: 0,
+              gap: '8px',
+              justifyContent: 'space-between',
+            }}
+          >
             {/* Section 1 Header */}
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                marginBottom: '4px',
                 borderBottom: '1px solid #1E293B',
-                paddingBottom: '3px',
+                paddingBottom: '4px',
+                flexShrink: 0,
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <ShieldCheck size={14} color="#38BDF8" />
+                <ShieldCheck size={15} color="#38BDF8" />
                 <h2
                   style={{
-                    fontSize: '11px',
+                    fontSize: '12px',
                     fontWeight: 800,
                     margin: 0,
                     letterSpacing: '0.04em',
@@ -464,7 +436,7 @@ export const App: React.FC = () => {
               </div>
               <div
                 style={{
-                  fontSize: '8.5px',
+                  fontSize: '9.5px',
                   color: '#64748B',
                   fontFamily: "'JetBrains Mono', monospace",
                   textTransform: 'uppercase',
@@ -482,7 +454,7 @@ export const App: React.FC = () => {
                 backgroundColor: '#1E293B',
                 gap: '1px',
                 border: '1px solid #1E293B',
-                marginBottom: '8px',
+                flexShrink: 0,
               }}
             >
               {personalDomains.map((dom) => (
@@ -491,52 +463,58 @@ export const App: React.FC = () => {
                   domain={dom}
                   isSelected={selectedDomainId === dom.domain_id}
                   onSelect={handleSelectDomain}
+                  findings={dashboard.findings}
+                  detail={selectedDomainId === dom.domain_id ? activeDomainDetail : null}
                 />
               ))}
             </div>
 
-            {/* 2. Middle Full-Width ENVIRONMENT_ECLSS Strip (Sky Cobalt Header + Sparklines) */}
-            <EclssStrip
-              domain={environmentalDomains[0]}
-              isSelected={selectedDomainId === 'environment_eclss'}
-              onSelect={handleSelectDomain}
-            />
+            {/* 2. Middle Full-Width ENVIRONMENT_ECLSS Strip */}
+            <div style={{ flexShrink: 0 }}>
+              <EclssStrip
+                domain={environmentalDomains[0]}
+                isSelected={selectedDomainId === 'environment_eclss'}
+                onSelect={handleSelectDomain}
+              />
+            </div>
 
-            {/* 3. Bottom Embedded Live Telemetry Graph (min-h-[210px], Above-the-Fold) */}
-            <EmbeddedTelemetryChart
-              detail={activeDomainDetail}
-              summary={activeSummary}
-              onExpand={() => setIsDetailExpanded(true)}
-              onOpenTelemetryModal={handleOpenTelemetryForDomain}
-            />
+            {/* 3. Bottom Embedded Live Telemetry Graph */}
+            <div style={{ flex: 1, minHeight: '180px', display: 'flex', flexDirection: 'column' }}>
+              <EmbeddedTelemetryChart
+                detail={activeDomainDetail}
+                summary={activeSummary}
+                onExpand={() => setIsDetailExpanded(true)}
+                onOpenTelemetryModal={handleOpenTelemetryForDomain}
+              />
+            </div>
           </div>
 
           {/* ========================================================================= */}
-          {/* RIGHT PANE (38% Width, Matching Left Pane Height, Internally Scrollable) */}
+          {/* RIGHT PANE (40% Width, Split 50/50): Findings & Protocol Queue */}
           {/* ========================================================================= */}
           <div
-            className="right-scroll-pane"
             style={{
               display: 'flex',
               flexDirection: 'column',
+              height: '100%',
+              minHeight: 0,
               minWidth: 0,
-              height: leftPaneHeight ? `${leftPaneHeight}px` : undefined,
-              maxHeight: leftPaneHeight ? `${leftPaneHeight}px` : 'calc(100vh - 80px)',
-              overflowY: 'auto',
-              overflowX: 'hidden',
-              paddingRight: '4px',
-              gap: '8px',
+              gap: '10px',
             }}
           >
-            {/* Top Section: Cross-Domain Findings & Action Queue */}
-            <FindingsPanel findings={dashboard.findings} onSelectDomain={handleSelectDomain} />
+            {/* Top 50%: Cross-Domain Findings & Action Queue */}
+            <div style={{ flex: '1 1 50%', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+              <FindingsPanel findings={dashboard.findings} onSelectDomain={handleSelectDomain} />
+            </div>
 
-            {/* Bottom Section: Recommended Protocol & Escalation Trigger */}
-            <RecommendationsPanel
-              recommendations={dashboard.recommendations}
-              astronautId={activeAstronautId}
-              onAcknowledge={handleAcknowledgeRecommendation}
-            />
+            {/* Bottom 50%: Recommended Protocol & Escalation Trigger */}
+            <div style={{ flex: '1 1 50%', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+              <RecommendationsPanel
+                recommendations={dashboard.recommendations}
+                astronautId={activeAstronautId}
+                onAcknowledge={handleAcknowledgeRecommendation}
+              />
+            </div>
           </div>
         </main>
       )}

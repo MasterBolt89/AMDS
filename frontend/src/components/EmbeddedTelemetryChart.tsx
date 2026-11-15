@@ -220,6 +220,9 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
         display: 'flex',
         flexDirection: 'column',
         gap: '5px',
+        height: '100%',
+        minHeight: 0,
+        flex: 1,
       }}
     >
       {/* Gradient Definitions */}
@@ -337,8 +340,8 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
         </div>
       </div>
 
-      {/* Main Time-Series LineChart (height ~175px) */}
-      <div style={{ width: '100%', height: '175px', backgroundColor: '#07090F', padding: '2px 6px 0 0' }}>
+      {/* Main Time-Series LineChart (Flexible Height) */}
+      <div style={{ width: '100%', flex: 1, minHeight: '160px', backgroundColor: '#07090F', padding: '2px 6px 0 0' }}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 4, right: 15, left: -10, bottom: 0 }}>
             <CartesianGrid stroke="#1E293B" strokeDasharray="2 2" vertical={false} />
