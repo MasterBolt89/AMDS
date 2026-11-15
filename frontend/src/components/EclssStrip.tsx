@@ -78,7 +78,7 @@ export const EclssStrip: React.FC<EclssStripProps> = ({
         borderRadius: '0px',
         cursor: 'pointer',
         transition: 'all 0.12s ease',
-        marginBottom: '10px',
+        marginBottom: '8px',
         overflow: 'hidden',
       }}
       onMouseEnter={(e) => {
@@ -93,22 +93,22 @@ export const EclssStrip: React.FC<EclssStripProps> = ({
         style={{
           backgroundColor: '#38BDF8',
           color: '#050608',
-          padding: '3px 10px',
+          padding: '2px 8px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           fontFamily: "'JetBrains Mono', monospace",
           fontWeight: 800,
-          letterSpacing: '0.06em',
-          fontSize: '11px',
+          letterSpacing: '0.05em',
+          fontSize: '10px',
           textTransform: 'uppercase',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Wind size={13} color="#050608" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <Wind size={12} color="#050608" />
           <span>ENVIRONMENTAL & LIFE SUPPORT (ECLSS) — HABITAT ATMOSPHERE</span>
           <div className="tooltip-container" onClick={(e) => e.stopPropagation()}>
-            <Info size={11} color="#050608" style={{ cursor: 'help' }} />
+            <Info size={10} color="#050608" style={{ cursor: 'help' }} />
             <div className="tooltip-content" style={{ color: '#E2E8F0', border: '1px solid #38BDF8' }}>
               <div style={{ fontWeight: 700, color: '#38BDF8', marginBottom: '2px' }}>
                 ECLSS Scope Notice
@@ -119,20 +119,20 @@ export const EclssStrip: React.FC<EclssStripProps> = ({
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <span
             style={{
               backgroundColor: isCritical ? '#7F1D1D' : '#0284C7',
               color: '#FFFFFF',
-              padding: '1px 6px',
+              padding: '1px 5px',
               borderRadius: '2px',
-              fontSize: '9.5px',
+              fontSize: '8.5px',
               fontWeight: 800,
             }}
           >
             {isCritical ? '● CRITICAL ANOMALY' : isAttention ? '● ATTENTION' : '● NOMINAL'}
           </span>
-          <span style={{ fontSize: '9.5px', color: '#0F172A', fontWeight: 700 }}>
+          <span style={{ fontSize: '8.5px', color: '#0F172A', fontWeight: 700 }}>
             {isSelected ? '● ACTIVE STREAM' : 'GRAPH →'}
           </span>
         </div>
@@ -143,9 +143,9 @@ export const EclssStrip: React.FC<EclssStripProps> = ({
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(5, 1fr)',
-          gap: '8px',
+          gap: '6px',
           backgroundColor: '#07090F',
-          padding: '6px 12px',
+          padding: '4px 10px',
           alignItems: 'center',
         }}
       >

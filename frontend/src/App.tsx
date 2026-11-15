@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   DashboardResponse,
   DomainDetailResponse,
@@ -41,6 +41,46 @@ export const App: React.FC = () => {
   const [telemetryDefaultMetric, setTelemetryDefaultMetric] = useState<string>('crp_biomarker_mg_l');
   const [isRisksModalOpen, setIsRisksModalOpen] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Synchronized Layout Height for Left/Right Split Pane
+  const leftPaneRef = useRef<HTMLDivElement>(null);
+  const [leftPaneHeight, setLeftPaneHeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    const el = leftPaneRef.current;
+    if (!el) return;
+
+    const updateHeight = () => {
+      if (typeof el.getBoundingClientRect === 'function') {
+        const rect = el.getBoundingClientRect();
+        if (rect && rect.height > 0) {
+          setLeftPaneHeight(Math.round(rect.height));
+        }
+      }
+    };
+
+    updateHeight();
+
+    let observer: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      observer = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const height = Math.round(entry.contentRect.height);
+          if (height > 0) {
+            setLeftPaneHeight(height);
+          }
+        }
+      });
+      observer.observe(el);
+    }
+
+    window.addEventListener('resize', updateHeight);
+
+    return () => {
+      if (observer) observer.disconnect();
+      window.removeEventListener('resize', updateHeight);
+    };
+  }, [dashboard, selectedDomainId, isDetailExpanded]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -297,28 +337,28 @@ export const App: React.FC = () => {
       ) : (
         <main
           style={{
-            padding: '10px 14px',
+            padding: '8px 12px',
             maxWidth: '1600px',
             margin: '0 auto',
             display: 'grid',
             gridTemplateColumns: 'minmax(0, 62%) minmax(0, 38%)',
-            gap: '12px',
+            gap: '10px',
             alignItems: 'start',
           }}
         >
           {/* ========================================================================= */}
           {/* LEFT PANE (62% Width): 9-Domain Matrix + Embedded Live Telemetry Chart */}
           {/* ========================================================================= */}
-          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+          <div ref={leftPaneRef} style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
             {/* Section 1 Header */}
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                marginBottom: '6px',
+                marginBottom: '4px',
                 borderBottom: '1px solid #1E293B',
-                paddingBottom: '4px',
+                paddingBottom: '3px',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -357,7 +397,7 @@ export const App: React.FC = () => {
                 backgroundColor: '#1E293B',
                 gap: '1px',
                 border: '1px solid #1E293B',
-                marginBottom: '10px',
+                marginBottom: '8px',
               }}
             >
               {personalDomains.map((dom) => (
@@ -387,9 +427,22 @@ export const App: React.FC = () => {
           </div>
 
           {/* ========================================================================= */}
-          {/* RIGHT PANE (38% Width, Pinned Height): Findings & Streamlined Protocol Queue */}
+          {/* RIGHT PANE (38% Width, Matching Left Pane Height, Internally Scrollable) */}
           {/* ========================================================================= */}
-          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+          <div
+            className="right-scroll-pane"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              minWidth: 0,
+              height: leftPaneHeight ? `${leftPaneHeight}px` : undefined,
+              maxHeight: leftPaneHeight ? `${leftPaneHeight}px` : 'calc(100vh - 80px)',
+              overflowY: 'auto',
+              overflowX: 'hidden',
+              paddingRight: '4px',
+              gap: '8px',
+            }}
+          >
             {/* Top Section: Cross-Domain Findings & Action Queue */}
             <FindingsPanel findings={dashboard.findings} onSelectDomain={handleSelectDomain} />
 
