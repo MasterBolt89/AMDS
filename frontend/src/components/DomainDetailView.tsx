@@ -127,10 +127,25 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
         isCappedOutlier = true;
       }
 
+      let timeLabel = pt.timestamp;
+      let day = pt.mission_day;
+      try {
+        const d = new Date(pt.timestamp);
+        const hrs = d.getUTCHours().toString().padStart(2, '0');
+        const mins = d.getUTCMinutes().toString().padStart(2, '0');
+        if (!day) {
+          const maxDate = filteredSeries.length > 0 ? new Date(filteredSeries[filteredSeries.length - 1].timestamp).getTime() : d.getTime();
+          const dayDiff = Math.round((maxDate - d.getTime()) / (24 * 3600 * 1000));
+          day = Math.max(1, maxMissionDay - dayDiff);
+        }
+        timeLabel = `D${day} ${hrs}:${mins}`;
+      } catch {}
+
       return {
         timestamp: pt.timestamp,
-        mission_day: `Day ${pt.mission_day || 42}`,
-        raw_day: pt.mission_day || 42,
+        timeLabel,
+        mission_day: timeLabel,
+        raw_day: day || maxMissionDay,
         value: pt.value,
         plotValue: plotVal,
         isCappedOutlier,
@@ -140,7 +155,7 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
         modality: pt.modality,
       };
     });
-  }, [filteredSeries, includeSuspectOutliers, yMax]);
+  }, [filteredSeries, includeSuspectOutliers, yMax, maxMissionDay]);
 
   const isInsufficient = detail.status === 'INSUFFICIENT_DATA';
 
@@ -502,7 +517,7 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
                 <LineChart data={chartData} margin={{ top: 15, right: 30, left: 10, bottom: 10 }}>
                   <CartesianGrid stroke="#1F2937" strokeDasharray="3 3" />
                   <XAxis
-                    dataKey="mission_day"
+                    dataKey="timeLabel"
                     stroke="#64748B"
                     tick={{ fill: '#94A3B8', fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}
                   />
@@ -540,7 +555,7 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
                               marginBottom: '4px',
                             }}
                           >
-                            {data.mission_day} ({data.timestamp.slice(0, 10)})
+                            {data.timeLabel} UTC ({data.timestamp.slice(0, 10)})
                           </div>
                           <div style={{ marginBottom: '4px' }}>
                             Measured Value:{' '}
@@ -722,7 +737,7 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
                       {pt.timestamp.replace('T', ' ').replace('Z', '')}
                     </td>
                     <td style={{ padding: '8px 12px', fontFamily: "'JetBrains Mono', monospace", fontWeight: 600 }}>
-                      Day {pt.mission_day}
+                      Day {pt.mission_day || maxMissionDay}
                     </td>
                     <td
                       style={{

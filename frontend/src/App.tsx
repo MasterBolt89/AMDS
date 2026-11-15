@@ -498,6 +498,7 @@ export const App: React.FC = () => {
           {/* LEFT PANE (Dynamic Width %): 9-Domain Matrix + Embedded Live Telemetry Chart */}
           {/* ========================================================================= */}
           <div
+            className="right-scroll-pane"
             style={{
               width: `calc(${leftColWidthPct}% - 6px)`,
               display: 'flex',
@@ -505,9 +506,10 @@ export const App: React.FC = () => {
               height: '100%',
               minHeight: 0,
               minWidth: 0,
-              gap: '8px',
-              justifyContent: 'space-between',
+              gap: '6px',
               paddingRight: '6px',
+              overflowY: 'auto',
+              overflowX: 'hidden',
             }}
           >
             {/* Section 1 Header */}
@@ -581,8 +583,8 @@ export const App: React.FC = () => {
               />
             </div>
 
-            {/* 3. Bottom Embedded Live Telemetry Graph */}
-            <div style={{ flex: 1, minHeight: '180px', display: 'flex', flexDirection: 'column' }}>
+            {/* 3. Bottom Embedded Live Telemetry Graph (Responsive Flex Height) */}
+            <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
               <EmbeddedTelemetryChart
                 detail={activeDomainDetail}
                 summary={activeSummary}

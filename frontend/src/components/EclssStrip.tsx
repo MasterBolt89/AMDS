@@ -78,7 +78,6 @@ export const EclssStrip: React.FC<EclssStripProps> = ({
         borderRadius: '0px',
         cursor: 'pointer',
         transition: 'all 0.12s ease',
-        marginBottom: '8px',
         overflow: 'hidden',
       }}
       onMouseEnter={(e) => {
@@ -93,22 +92,22 @@ export const EclssStrip: React.FC<EclssStripProps> = ({
         style={{
           backgroundColor: '#38BDF8',
           color: '#050608',
-          padding: '4px 10px',
+          padding: '2px 8px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           fontFamily: "'JetBrains Mono', monospace",
           fontWeight: 800,
-          letterSpacing: '0.05em',
-          fontSize: '11px',
+          letterSpacing: '0.04em',
+          fontSize: '10px',
           textTransform: 'uppercase',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Wind size={13} color="#050608" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <Wind size={12} color="#050608" />
           <span>ENVIRONMENTAL & LIFE SUPPORT (ECLSS) — HABITAT ATMOSPHERE</span>
           <div className="tooltip-container" onClick={(e) => e.stopPropagation()}>
-            <Info size={11} color="#050608" style={{ cursor: 'help' }} />
+            <Info size={10} color="#050608" style={{ cursor: 'help' }} />
             <div className="tooltip-content" style={{ color: '#E2E8F0', border: '1px solid #38BDF8' }}>
               <div style={{ fontWeight: 700, color: '#38BDF8', marginBottom: '2px' }}>
                 ECLSS Scope Notice
@@ -119,20 +118,20 @@ export const EclssStrip: React.FC<EclssStripProps> = ({
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
           <span
             style={{
               backgroundColor: isCritical ? '#7F1D1D' : '#0284C7',
               color: '#FFFFFF',
-              padding: '2px 6px',
+              padding: '1px 5px',
               borderRadius: '2px',
-              fontSize: '10.5px',
+              fontSize: '9.5px',
               fontWeight: 800,
             }}
           >
             {isCritical ? '● CRITICAL ANOMALY' : isAttention ? '● ATTENTION' : '● NOMINAL'}
           </span>
-          <span style={{ fontSize: '10px', color: '#0F172A', fontWeight: 700 }}>
+          <span style={{ fontSize: '9px', color: '#0F172A', fontWeight: 700 }}>
             {isSelected ? '● ACTIVE STREAM' : 'GRAPH →'}
           </span>
         </div>
@@ -143,91 +142,91 @@ export const EclssStrip: React.FC<EclssStripProps> = ({
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(5, 1fr)',
-          gap: '8px',
+          gap: '6px',
           backgroundColor: '#07090F',
-          padding: '6px 12px',
+          padding: '4px 8px',
           alignItems: 'center',
         }}
       >
         {/* O2 */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '6px', borderRight: '1px solid #1E293B' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '4px', borderRight: '1px solid #1E293B' }}>
           <div>
-            <div style={{ fontSize: '10.5px', color: '#94A3B8', textTransform: 'uppercase', fontFamily: "'JetBrains Mono', monospace" }}>
+            <div style={{ fontSize: '9.5px', color: '#94A3B8', textTransform: 'uppercase', fontFamily: "'JetBrains Mono', monospace" }}>
               Cabin ppO₂
             </div>
             <div
               style={{
-                fontSize: '14px',
+                fontSize: '12.5px',
                 fontWeight: 800,
                 color: isCritical ? '#EF4444' : '#F8FAFC',
                 fontFamily: "'JetBrains Mono', monospace",
                 fontVariantNumeric: 'tabular-nums',
-                lineHeight: '1.2',
+                lineHeight: '1.15',
               }}
             >
               {ppO2}
             </div>
           </div>
-          <MicroSparkline points={o2Points} color={o2Color} />
+          <MicroSparkline points={o2Points} color={o2Color} width={30} height={12} />
         </div>
 
         {/* CO2 */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '6px', borderRight: '1px solid #1E293B' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '4px', borderRight: '1px solid #1E293B' }}>
           <div>
-            <div style={{ fontSize: '10.5px', color: '#94A3B8', textTransform: 'uppercase', fontFamily: "'JetBrains Mono', monospace" }}>
+            <div style={{ fontSize: '9.5px', color: '#94A3B8', textTransform: 'uppercase', fontFamily: "'JetBrains Mono', monospace" }}>
               Cabin ppCO₂
             </div>
             <div
               style={{
-                fontSize: '14px',
+                fontSize: '12.5px',
                 fontWeight: 800,
                 color: isCritical ? '#FBBF24' : '#F8FAFC',
                 fontFamily: "'JetBrains Mono', monospace",
                 fontVariantNumeric: 'tabular-nums',
-                lineHeight: '1.2',
+                lineHeight: '1.15',
               }}
             >
               {ppCO2}
             </div>
           </div>
-          <MicroSparkline points={co2Points} color={co2Color} />
+          <MicroSparkline points={co2Points} color={co2Color} width={30} height={12} />
         </div>
 
         {/* Temp */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '6px', borderRight: '1px solid #1E293B' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingRight: '4px', borderRight: '1px solid #1E293B' }}>
           <div>
-            <div style={{ fontSize: '10.5px', color: '#94A3B8', textTransform: 'uppercase', fontFamily: "'JetBrains Mono', monospace" }}>
+            <div style={{ fontSize: '9.5px', color: '#94A3B8', textTransform: 'uppercase', fontFamily: "'JetBrains Mono', monospace" }}>
               Habitat Temp
             </div>
             <div
               style={{
-                fontSize: '14px',
+                fontSize: '12.5px',
                 fontWeight: 800,
                 color: '#F8FAFC',
                 fontFamily: "'JetBrains Mono', monospace",
                 fontVariantNumeric: 'tabular-nums',
-                lineHeight: '1.2',
+                lineHeight: '1.15',
               }}
             >
               {temperature}
             </div>
           </div>
-          <MicroSparkline points={tempPoints} color={tempColor} />
+          <MicroSparkline points={tempPoints} color={tempColor} width={30} height={12} />
         </div>
 
         {/* Total Pressure */}
-        <div style={{ paddingRight: '6px', borderRight: '1px solid #1E293B' }}>
-          <div style={{ fontSize: '10.5px', color: '#94A3B8', textTransform: 'uppercase', fontFamily: "'JetBrains Mono', monospace" }}>
+        <div style={{ paddingRight: '4px', borderRight: '1px solid #1E293B' }}>
+          <div style={{ fontSize: '9.5px', color: '#94A3B8', textTransform: 'uppercase', fontFamily: "'JetBrains Mono', monospace" }}>
             Total Pressure
           </div>
           <div
             style={{
-              fontSize: '14px',
+              fontSize: '12.5px',
               fontWeight: 800,
               color: isCritical ? '#EF4444' : '#F8FAFC',
               fontFamily: "'JetBrains Mono', monospace",
               fontVariantNumeric: 'tabular-nums',
-              lineHeight: '1.2',
+              lineHeight: '1.15',
             }}
           >
             {totalPressure}
@@ -236,17 +235,17 @@ export const EclssStrip: React.FC<EclssStripProps> = ({
 
         {/* Rel Humidity */}
         <div>
-          <div style={{ fontSize: '10.5px', color: '#94A3B8', textTransform: 'uppercase', fontFamily: "'JetBrains Mono', monospace" }}>
+          <div style={{ fontSize: '9.5px', color: '#94A3B8', textTransform: 'uppercase', fontFamily: "'JetBrains Mono', monospace" }}>
             Rel Humidity
           </div>
           <div
             style={{
-              fontSize: '14px',
+              fontSize: '12.5px',
               fontWeight: 800,
               color: '#F8FAFC',
               fontFamily: "'JetBrains Mono', monospace",
               fontVariantNumeric: 'tabular-nums',
-              lineHeight: '1.2',
+              lineHeight: '1.15',
             }}
           >
             {humidity}

@@ -46,13 +46,13 @@ export const getDomainIcon = (domainId: DomainId, size: number = 13) => {
 };
 
 export const DOMAIN_SHORT_NAMES: Record<string, string> = {
-  cardiovascular: 'CARDIOVASCULAR',
-  sleep_circadian: 'SLEEP & CIRCADIAN',
-  behavioral_psych: 'BEHAVIORAL PSYCH',
-  musculoskeletal: 'MUSCULOSKELETAL',
-  immune_microbio: 'IMMUNE MICROBIO',
+  cardiovascular: 'CARDIO',
+  sleep_circadian: 'SLEEP & CIRC',
+  behavioral_psych: 'BEHAVIOR',
+  musculoskeletal: 'MUSCULO',
+  immune_microbio: 'IMMUNE',
   radiation: 'RADIATION',
-  sensorimotor_neuro: 'SENSORIMOTOR',
+  sensorimotor_neuro: 'SENSOR',
   nutrition: 'NUTRITION',
   environment_eclss: 'ECLSS ATMOSPHERE',
 };
@@ -337,7 +337,7 @@ export const DomainCard: React.FC<DomainCardProps> = ({
         cursor: 'pointer',
         transition: 'all 0.15s ease',
         position: 'relative',
-        minHeight: '118px',
+        minHeight: '88px',
         outline: isSelected ? '2px solid #38BDF8' : '1px solid #1E293B',
         boxShadow: isSelected ? '0 0 16px rgba(56, 189, 248, 0.25)' : 'none',
         zIndex: isSelected ? 2 : 1,
@@ -360,7 +360,7 @@ export const DomainCard: React.FC<DomainCardProps> = ({
 
       <div
         style={{
-          padding: '10px 12px 12px 12px',
+          padding: '5px 8px 6px 8px',
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
@@ -368,24 +368,24 @@ export const DomainCard: React.FC<DomainCardProps> = ({
           minWidth: 0,
         }}
       >
-        {/* Header Row: Locked Left Title + Tooltip, Locked Right Status Dot (Min 12px) */}
+        {/* Header Row: Locked Left Title + Tooltip, Locked Right Status Dot */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '6px',
-            marginBottom: '4px',
+            gap: '4px',
+            marginBottom: '2px',
             minWidth: 0,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0, overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '3px', minWidth: 0, overflow: 'hidden' }}>
             <span
               style={{
-                fontSize: '12px',
+                fontSize: '11px',
                 fontWeight: 800,
                 color: isSelected ? '#38BDF8' : '#F1F5F9',
-                letterSpacing: '0.04em',
+                letterSpacing: '0.03em',
                 textTransform: 'uppercase',
                 fontFamily: "'JetBrains Mono', monospace",
                 whiteSpace: 'nowrap',
@@ -397,7 +397,7 @@ export const DomainCard: React.FC<DomainCardProps> = ({
               {shortName}
             </span>
             <div className="tooltip-container" onClick={(e) => e.stopPropagation()}>
-              <Info size={12} color="#64748B" style={{ cursor: 'help', flexShrink: 0 }} />
+              <Info size={10} color="#64748B" style={{ cursor: 'help', flexShrink: 0 }} />
               <div className="tooltip-content">
                 <div style={{ fontWeight: 700, color: '#38BDF8', marginBottom: '2px' }}>
                   {domain.display_name} Scope Notice
@@ -407,13 +407,13 @@ export const DomainCard: React.FC<DomainCardProps> = ({
             </div>
           </div>
 
-          {/* Locked Status Badge on the right (Minimum 12px, text-xs) */}
+          {/* Locked Status Badge on the right */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '4px',
-              fontSize: '12px',
+              gap: '3px',
+              fontSize: '10px',
               fontFamily: "'JetBrains Mono', monospace",
               fontWeight: 700,
               whiteSpace: 'nowrap',
@@ -440,7 +440,7 @@ export const DomainCard: React.FC<DomainCardProps> = ({
           </div>
         </div>
 
-        {/* Center: Large 32px-36px Tabular Monospace Reading OR Insufficient Data Gap */}
+        {/* Center: Large 28px Tabular Monospace Reading OR Insufficient Data Gap */}
         {parsed === null ? (
           <div
             data-testid="insufficient-data-notice"
@@ -448,7 +448,7 @@ export const DomainCard: React.FC<DomainCardProps> = ({
               backgroundColor: '#07090F',
               border: '1px dashed #475569',
               borderRadius: '2px',
-              padding: '6px 8px',
+              padding: '3px 6px',
               margin: 'auto 0',
             }}
           >
@@ -456,22 +456,22 @@ export const DomainCard: React.FC<DomainCardProps> = ({
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '5px',
+                gap: '4px',
                 color: '#94A3B8',
-                fontSize: '12px',
+                fontSize: '10px',
                 fontWeight: 800,
                 fontFamily: "'JetBrains Mono', monospace",
-                marginBottom: '3px',
+                marginBottom: '2px',
               }}
             >
-              <AlertCircle size={13} color="#94A3B8" />
+              <AlertCircle size={11} color="#94A3B8" />
               SURVEILLANCE GAP DETECTED
             </div>
             <div
               style={{
-                fontSize: '12px',
+                fontSize: '9.5px',
                 color: '#CBD5E1',
-                lineHeight: '1.35',
+                lineHeight: '1.25',
                 fontStyle: 'italic',
                 whiteSpace: 'normal',
                 wordBreak: 'break-word',
@@ -491,12 +491,12 @@ export const DomainCard: React.FC<DomainCardProps> = ({
               minWidth: 0,
             }}
           >
-            {/* Primary Tabular Reading & Unit (32px-36px text-3xl font-semibold tabular-nums) */}
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+            {/* Primary Tabular Reading & Unit */}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px' }}>
               <span
                 data-testid="headline-value"
                 style={{
-                  fontSize: '34px',
+                  fontSize: '28px',
                   fontWeight: 700,
                   color: isCritical ? '#EF4444' : isAttention ? '#FBBF24' : '#F8FAFC',
                   fontFamily: "'JetBrains Mono', monospace",
@@ -510,7 +510,7 @@ export const DomainCard: React.FC<DomainCardProps> = ({
                 <span
                   data-testid="headline-unit"
                   style={{
-                    fontSize: '13px',
+                    fontSize: '11.5px',
                     color: '#94A3B8',
                     fontWeight: 600,
                     fontFamily: "'JetBrains Mono', monospace",
@@ -521,36 +521,36 @@ export const DomainCard: React.FC<DomainCardProps> = ({
               )}
             </div>
 
-            {/* Metric Label Line (Minimum 12px, text-xs) */}
+            {/* Metric Label Line */}
             <div
               data-testid="headline-label"
               style={{
                 color: '#94A3B8',
-                fontSize: '12px',
+                fontSize: '10.5px',
                 textTransform: 'uppercase',
                 fontWeight: 600,
-                letterSpacing: '0.03em',
+                letterSpacing: '0.02em',
                 fontFamily: "'JetBrains Mono', monospace",
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
-                marginTop: '2px',
+                marginTop: '1px',
               }}
               title={parsed.label}
             >
               {parsed.label}
             </div>
 
-            {/* Delta & Baseline Info Line (Minimum 12px, text-xs) */}
+            {/* Delta & Baseline Info Line */}
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
-                fontSize: '12px',
+                gap: '5px',
+                fontSize: '10px',
                 fontFamily: "'JetBrains Mono', monospace",
                 color: '#64748B',
-                marginTop: '2px',
+                marginTop: '1px',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',

@@ -178,9 +178,26 @@ export class StatefulMockAdapter {
           domainDetail.metrics.push(metric);
         }
 
+        const currentDay = this.dashboard?.astronaut?.mission_day || 42;
+        let ptMissionDay = item.mission_day;
+        if (!ptMissionDay) {
+          try {
+            const refDate = new Date(
+              (this.dashboard?.astronaut as any)?.reference_timestamp ||
+              this.dashboard?.domains?.[0]?.last_updated ||
+              new Date().toISOString()
+            );
+            const itemDate = new Date(item.timestamp);
+            const dayDiff = Math.floor((refDate.getTime() - itemDate.getTime()) / (24 * 3600 * 1000));
+            ptMissionDay = Math.max(1, currentDay - dayDiff);
+          } catch {
+            ptMissionDay = currentDay;
+          }
+        }
+
         metric.series.push({
           timestamp: item.timestamp,
-          mission_day: item.mission_day || this.dashboard.astronaut.mission_day,
+          mission_day: ptMissionDay,
           value: item.value,
           quality: item.quality || 'VALID',
           provenance: item.provenance || 'MANUAL_ENTRY',
