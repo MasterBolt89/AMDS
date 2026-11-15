@@ -177,3 +177,26 @@ body {
 .right-scroll-pane::-webkit-scrollbar-thumb:hover {
   background: #38BDF8;
 }
+
+/* Draggable Splitter Resizers (IDE/Console Style) */
+.splitter-col {
+  user-select: none;
+  touch-action: none;
+}
+
+.splitter-col:hover > div,
+.splitter-col.active > div {
+  background-color: #38BDF8 !important;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.75);
+}
+
+.splitter-row {
+  user-select: none;
+  touch-action: none;
+}
+
+.splitter-row:hover > div,
+.splitter-row.active > div {
+  background-color: #38BDF8 !important;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.75);
+}
