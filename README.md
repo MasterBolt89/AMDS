@@ -1,4 +1,4 @@
-# 🚀 Astronaut Health Command Center
+# 🚀 Project CosmoVitals — Astronaut Health Command Center
 ### Autonomous Multimodal Health & Operational Risk Intelligence for Deep Space Exploration
 **NASA Space Apps Challenge 2026**
 
@@ -110,78 +110,48 @@ NASA-Space/
 
 ## ⚡ Quick Start Instructions
 
-### 🌟 One-Click Windows Demo Launcher
-For instant evaluation on Windows, simply double-click or run from the repository root:
+Launch the complete application (FastAPI backend + Vite frontend) with a single cross-platform command:
+
+### 🚀 Unified One-Click Launchers (Recommended)
+
+#### macOS / Linux
+```bash
+./start-demo.sh
+```
+*(Automatically syncs Python dependencies with `uv`, boots the FastAPI backend on `http://127.0.0.1:8000`, installs and starts the Vite frontend on `http://127.0.0.1:5173`, opens the dashboard in your default browser, and cleanly shuts down background processes on exit).*
+
+#### Windows
 ```cmd
 start-demo.bat
 ```
-This self-healing launcher automatically configures tool environments, launches the FastAPI backend on `http://127.0.0.1:8000`, boots the Vite frontend on `http://127.0.0.1:5173`, and opens the dashboard directly in your default browser.
+*(Configures tool paths, starts the backend and frontend in separate background shells, and launches `http://127.0.0.1:5173` in your default browser).*
 
 ---
 
-### Manual Launch Options
-You can also launch each service manually:
-* **Option A: Full-Stack Mode (Recommended):** Live FastAPI backend + React frontend with live REST synchronization.
-* **Option B: Standalone Frontend Mode:** Zero-backend setup using the built-in stateful mock simulator.
+### 🛡️ Backend-First Auto-Fallback & Manual Launch
+You can also start each service manually or run the frontend standalone:
 
-### Prerequisites
-* **Python**: `3.11+` (with `uv` recommended: [install uv](https://docs.astral.sh/uv/))
-* **Node.js**: `18.0+` & `npm`
+* **Full-Stack Mode:**
+  ```bash
+  # Terminal 1: Live FastAPI Backend
+  cd backend && uv sync && uv run uvicorn app.main:app --reload --port 8000
 
----
+  # Terminal 2: React Vite Command Center
+  cd frontend && npm install && npm run dev
+  ```
+  * **Interactive OpenAPI Swagger Docs:** [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+  * **Frontend Command Center:** [http://localhost:5173](http://localhost:5173)
 
-### Option A: Full-Stack Mode (Live Backend + Frontend)
-
-#### 1. Start the Backend
-Open a terminal in the repository root:
-```bash
-cd backend
-
-# Install dependencies and sync virtual environment
-uv sync
-
-# Start the FastAPI server
-uv run uvicorn app.main:app --reload --port 8000
-```
-* **Interactive OpenAPI Swagger Docs:** [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-* **ReDoc Documentation:** [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
-* **API Root:** [http://127.0.0.1:8000/api/v1/astronauts](http://127.0.0.1:8000/api/v1/astronauts)
-
-#### 2. Start the Frontend
-Open a second terminal:
-```bash
-cd frontend
-
-# Verify environment is configured for live backend (default in .env)
-# VITE_USE_MOCK=false
-# VITE_API_BASE_URL=http://127.0.0.1:8000
-
-# Install dependencies
-npm install
-
-# Start Vite development server
-npm run dev
-```
-* **Command Center Dashboard:** [http://localhost:5173](http://localhost:5173)
-
----
-
-### Option B: Standalone Frontend Mode (No Backend Required)
-
-Evaluators can run the complete application without installing Python or starting the backend:
-
-1. In `frontend/.env` (or copy from `.env.example`), set:
-   ```env
-   VITE_USE_MOCK=true
-   VITE_API_BASE_URL=http://localhost:8000
-   ```
-2. Run the frontend:
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
-* All 4 judge scenarios, time-series graphs, modal submissions, and recommendation action workflows will execute with full stateful simulation in the browser.
+* **Standalone Frontend Mode (Automatic Browser Mock Fallback):**
+  ```bash
+  cd frontend && npm install && npm run dev
+  ```
+  * The frontend client attempts the live FastAPI backend (`http://127.0.0.1:8000`) first.
+  * If the backend is not running, the application **automatically falls back** to the built-in stateful browser mock simulator.
+  * A prominent amber warning banner displays at the top of the console:
+    > **`HARDCODED MOCK MODE — Live FastAPI backend is not connected. Displaying browser simulation fixtures rather than the Python intelligence engine.`**
+  * Evaluators can click the **"Retry Live Connection"** button at any time to re-ping the backend without reloading the page.
+  * When connected to the live server, a green **`LIVE FASTAPI ENGINE`** status pill appears in the top header.
 
 ---
 
@@ -201,7 +171,7 @@ uv run pytest -v
 cd frontend
 npm test
 ```
-* **Coverage:** 18 automated tests across `contractAndScenarios.test.ts`, `DomainCard.test.tsx`, and `fullstackIntegration.test.ts` validating all 4 judge scenarios, 9 domains, 8 Personal vs 1 ECLSS breakdown, strict `INSUFFICIENT_DATA` safety guardrails, and tabular monospace headline metric displays.
+* **Coverage:** 22 automated tests across `contractAndScenarios.test.ts`, `DomainCard.test.tsx`, `fallbackConnection.test.ts`, and `fullstackIntegration.test.ts` validating all 4 judge scenarios, 9 domains, 8 Personal vs 1 ECLSS breakdown, strict `INSUFFICIENT_DATA` safety guardrails, auto-fallback connection states, and tabular monospace headline metric displays.
 
 ### Frontend Production Build & TypeScript Verification
 ```bash

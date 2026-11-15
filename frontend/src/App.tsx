@@ -8,7 +8,7 @@ import {
   BatchTelemetryIngestRequest,
   OperationalRiskCreateRequest,
 } from './types/api';
-import { apiClient } from './api/client';
+import { apiClient, ConnectionState, FORCE_MOCK } from './api/client';
 import { Header } from './components/Header';
 import { DomainCard } from './components/DomainCard';
 import { EclssStrip } from './components/EclssStrip';
@@ -18,7 +18,7 @@ import { FindingsPanel } from './components/FindingsPanel';
 import { RecommendationsPanel } from './components/RecommendationsPanel';
 import { TelemetryBatchModal } from './components/TelemetryBatchModal';
 import { OperationalRisksModal } from './components/OperationalRisksModal';
-import { Activity, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Activity, ShieldCheck, CheckCircle2, AlertTriangle, RefreshCw } from 'lucide-react';
 
 export const App: React.FC = () => {
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
@@ -26,6 +26,8 @@ export const App: React.FC = () => {
   const [astronauts, setAstronauts] = useState<AstronautSummary[]>([]);
   const [activeAstronautId, setActiveAstronautId] = useState<string>('astro-101');
   const [activeScenarioId, setActiveScenarioId] = useState<string>('nominal_iss_baseline');
+  const [connectionState, setConnectionState] = useState<ConnectionState>(apiClient.getConnectionState());
+  const [retryingConnection, setRetryingConnection] = useState<boolean>(false);
 
   // Master-Detail Console State
   const [selectedDomainId, setSelectedDomainId] = useState<DomainId>('cardiovascular');
@@ -89,6 +91,12 @@ export const App: React.FC = () => {
     }, 4000);
   };
 
+  useEffect(() => {
+    return apiClient.onConnectionStateChange((state) => {
+      setConnectionState(state);
+    });
+  }, []);
+
   const initializeApp = async () => {
     setLoading(true);
     setError(null);
@@ -126,6 +134,24 @@ export const App: React.FC = () => {
   useEffect(() => {
     initializeApp();
   }, []);
+
+  const handleRetryConnection = async () => {
+    setRetryingConnection(true);
+    try {
+      const newState = await apiClient.retryConnection();
+      setConnectionState(newState);
+      if (newState === 'LIVE_BACKEND') {
+        showToast('Connected to Live FastAPI Engine on http://127.0.0.1:8000');
+        await initializeApp();
+      } else {
+        showToast('FastAPI backend unreachable at http://127.0.0.1:8000. Remaining in Mock Mode.');
+      }
+    } catch (err) {
+      showToast('Connection attempt failed.');
+    } finally {
+      setRetryingConnection(false);
+    }
+  };
 
   const handleSelectAstronaut = async (astronautId: string) => {
     setLoading(true);
@@ -276,6 +302,7 @@ export const App: React.FC = () => {
 
   if (!dashboard) return null;
 
+  const isMockActive = connectionState === 'HARDCODED_MOCK_FALLBACK' || FORCE_MOCK;
   const personalDomains = dashboard.domains.filter((d) => d.domain_category === 'PERSONAL_HEALTH');
   const environmentalDomains = dashboard.domains.filter(
     (d) => d.domain_category === 'ENVIRONMENTAL_ECLSS'
@@ -310,13 +337,71 @@ export const App: React.FC = () => {
         </div>
       )}
 
-      {/* Persistent Mission Telemetry Header (Compact py-2) */}
+      {/* Prominent Hardcoded Mock Mode Warning Banner */}
+      {isMockActive && (
+        <div
+          style={{
+            backgroundColor: '#78350F',
+            borderBottom: '2px solid #F59E0B',
+            color: '#FEF3C7',
+            padding: '8px 16px',
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            fontSize: '12px',
+            fontFamily: "'JetBrains Mono', monospace",
+            position: 'sticky',
+            top: 0,
+            zIndex: 60,
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <AlertTriangle size={18} color="#FBBF24" style={{ flexShrink: 0 }} />
+            <span>
+              <strong style={{ color: '#FDE68A', letterSpacing: '0.04em' }}>
+                HARDCODED MOCK MODE
+              </strong>{' '}
+              — Live FastAPI backend is not connected. Displaying browser simulation fixtures rather than the Python intelligence engine.
+            </span>
+          </div>
+          <button
+            onClick={handleRetryConnection}
+            disabled={retryingConnection}
+            style={{
+              backgroundColor: '#D97706',
+              color: '#FFFFFF',
+              border: '1px solid #FCD34D',
+              borderRadius: '2px',
+              padding: '4px 12px',
+              fontSize: '11px',
+              fontWeight: 700,
+              cursor: retryingConnection ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'all 0.15s ease',
+              flexShrink: 0,
+              fontFamily: "'JetBrains Mono', monospace",
+            }}
+            title="Attempt to connect to FastAPI backend at http://127.0.0.1:8000"
+          >
+            <RefreshCw size={12} className={retryingConnection ? 'animate-spin' : ''} />
+            <span>{retryingConnection ? 'Connecting...' : 'Retry Live Connection'}</span>
+          </button>
+        </div>
+      )}
+
+      {/* Persistent Mission Telemetry Header */}
       <Header
         dashboard={dashboard}
         scenarios={scenarios}
         activeScenarioId={activeScenarioId}
         astronauts={astronauts}
         activeAstronautId={activeAstronautId}
+        connectionState={connectionState}
         onSelectAstronaut={handleSelectAstronaut}
         onSelectScenario={handleScenarioChange}
         onOpenRisks={() => setIsRisksModalOpen(true)}

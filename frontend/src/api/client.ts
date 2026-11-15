@@ -20,12 +20,31 @@ import {
   buildDomainDetailsForScenario,
 } from '../mocks/mockData';
 
+export type ConnectionState = 'LIVE_BACKEND' | 'HARDCODED_MOCK_FALLBACK';
+
 // Environment variable configuration
-// VITE_USE_MOCK defaults to true unless explicitly 'false'
+// Unless VITE_USE_MOCK=true is explicitly set, attempt live FastAPI backend first
 const metaEnv = typeof import.meta !== 'undefined' && (import.meta as any).env ? (import.meta as any).env : {};
 const rawUseMock = metaEnv.VITE_USE_MOCK;
-export const USE_MOCK: boolean = rawUseMock !== 'false';
+export const FORCE_MOCK: boolean = rawUseMock === 'true';
+export const USE_MOCK: boolean = FORCE_MOCK; // backward compatibility
 export const API_BASE_URL: string = metaEnv.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+
+let currentConnectionState: ConnectionState = FORCE_MOCK ? 'HARDCODED_MOCK_FALLBACK' : 'LIVE_BACKEND';
+const stateListeners = new Set<(state: ConnectionState) => void>();
+
+function notifyStateChange(newState: ConnectionState) {
+  if (currentConnectionState !== newState) {
+    currentConnectionState = newState;
+    stateListeners.forEach((fn) => {
+      try {
+        fn(newState);
+      } catch (err) {
+        console.error('Error in connection state listener:', err);
+      }
+    });
+  }
+}
 
 /**
  * Stateful In-Memory Mock Adapter Supporting All 4 Scenarios & Dynamic Astronaut
@@ -226,30 +245,94 @@ export class StatefulMockAdapter {
 const mockAdapter = new StatefulMockAdapter();
 
 /**
+ * Executes a live backend call, automatically falling back to stateful mock simulator
+ * if the backend is unreachable.
+ */
+async function executeWithFallback<T>(
+  liveCall: () => Promise<T>,
+  mockCall: () => T | Promise<T>
+): Promise<T> {
+  if (FORCE_MOCK || currentConnectionState === 'HARDCODED_MOCK_FALLBACK') {
+    return mockCall();
+  }
+
+  try {
+    const res = await liveCall();
+    notifyStateChange('LIVE_BACKEND');
+    return res;
+  } catch (err: any) {
+    console.warn(
+      `[API Client] Live FastAPI backend unreachable at ${API_BASE_URL}. Falling back to browser mock simulator.`,
+      err?.message || err
+    );
+    notifyStateChange('HARDCODED_MOCK_FALLBACK');
+    return mockCall();
+  }
+}
+
+/**
  * Unified API Client
- * Seamlessly interfaces with live FastAPI /api/v1 backend or in-memory mock adapter.
+ * Backend-first auto-fallback with explicit connection state.
  */
 export const apiClient = {
+  getConnectionState(): ConnectionState {
+    return currentConnectionState;
+  },
+
+  onConnectionStateChange(listener: (state: ConnectionState) => void): () => void {
+    stateListeners.add(listener);
+    return () => {
+      stateListeners.delete(listener);
+    };
+  },
+
   isMockActive(): boolean {
-    return USE_MOCK;
+    return currentConnectionState === 'HARDCODED_MOCK_FALLBACK';
+  },
+
+  async retryConnection(): Promise<ConnectionState> {
+    if (FORCE_MOCK) {
+      notifyStateChange('HARDCODED_MOCK_FALLBACK');
+      return 'HARDCODED_MOCK_FALLBACK';
+    }
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      const res = await fetch(`${API_BASE_URL}/health`, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (res.ok) {
+        notifyStateChange('LIVE_BACKEND');
+        return 'LIVE_BACKEND';
+      }
+    } catch {
+      // Backend remains unreachable
+    }
+
+    notifyStateChange('HARDCODED_MOCK_FALLBACK');
+    return 'HARDCODED_MOCK_FALLBACK';
   },
 
   async getAstronauts(): Promise<AstronautSummary[]> {
-    if (USE_MOCK) {
-      return mockAdapter.getAstronauts();
-    }
-    const res = await fetch(`${API_BASE_URL}/api/v1/astronauts`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch astronauts`);
-    return res.json();
+    return executeWithFallback(
+      async () => {
+        const res = await fetch(`${API_BASE_URL}/api/v1/astronauts`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch astronauts`);
+        return res.json();
+      },
+      () => mockAdapter.getAstronauts()
+    );
   },
 
   async getDashboard(astronautId: string = 'astro-101'): Promise<DashboardResponse> {
-    if (USE_MOCK) {
-      return mockAdapter.getDashboard(astronautId);
-    }
-    const res = await fetch(`${API_BASE_URL}/api/v1/astronauts/${astronautId}/dashboard`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch dashboard for ${astronautId}`);
-    return res.json();
+    return executeWithFallback(
+      async () => {
+        const res = await fetch(`${API_BASE_URL}/api/v1/astronauts/${astronautId}/dashboard`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch dashboard for ${astronautId}`);
+        return res.json();
+      },
+      () => mockAdapter.getDashboard(astronautId)
+    );
   },
 
   async getDomainDetail(
@@ -257,115 +340,127 @@ export const apiClient = {
     domainId: DomainId,
     range: string = '30d'
   ): Promise<DomainDetailResponse> {
-    if (USE_MOCK) {
-      return mockAdapter.getDomainDetail(astronautId, domainId);
-    }
-    const res = await fetch(
-      `${API_BASE_URL}/api/v1/astronauts/${astronautId}/domains/${domainId}?range=${range}`
+    return executeWithFallback(
+      async () => {
+        const res = await fetch(
+          `${API_BASE_URL}/api/v1/astronauts/${astronautId}/domains/${domainId}?range=${range}`
+        );
+        if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch domain detail for ${domainId}`);
+        return res.json();
+      },
+      () => mockAdapter.getDomainDetail(astronautId, domainId)
     );
-    if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch domain detail for ${domainId}`);
-    return res.json();
   },
 
   async getScenarios(): Promise<SimulationScenarioItem[]> {
-    if (USE_MOCK) {
-      return mockAdapter.getScenarios();
-    }
-    const res = await fetch(`${API_BASE_URL}/api/v1/simulation/scenarios`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch scenarios`);
-    const data = await res.json();
-    return data.scenarios || data;
+    return executeWithFallback(
+      async () => {
+        const res = await fetch(`${API_BASE_URL}/api/v1/simulation/scenarios`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch scenarios`);
+        const data = await res.json();
+        return data.scenarios || data;
+      },
+      () => mockAdapter.getScenarios()
+    );
   },
 
   async loadSimulationScenario(scenarioId: string, astronautId: string = 'astro-101'): Promise<DashboardResponse> {
-    if (USE_MOCK) {
-      return mockAdapter.resetToScenario(scenarioId, astronautId);
-    }
-    const res = await fetch(`${API_BASE_URL}/api/v1/simulation/load`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ scenario_id: scenarioId, astronaut_id: astronautId }),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to load scenario ${scenarioId}`);
-    return res.json();
+    return executeWithFallback(
+      async () => {
+        const res = await fetch(`${API_BASE_URL}/api/v1/simulation/load`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ scenario_id: scenarioId, astronaut_id: astronautId }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to load scenario ${scenarioId}`);
+        return res.json();
+      },
+      () => mockAdapter.resetToScenario(scenarioId, astronautId)
+    );
   },
 
   async acknowledgeRecommendation(
     recId: string,
     payload: RecommendationAcknowledgeRequest
   ): Promise<RecommendationAcknowledgeResponse> {
-    if (USE_MOCK) {
-      return mockAdapter.acknowledgeRecommendation(recId, payload);
-    }
-    const res = await fetch(`${API_BASE_URL}/api/v1/recommendations/${recId}/acknowledge`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to acknowledge recommendation`);
-    return res.json();
+    return executeWithFallback(
+      async () => {
+        const res = await fetch(`${API_BASE_URL}/api/v1/recommendations/${recId}/acknowledge`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to acknowledge recommendation`);
+        return res.json();
+      },
+      () => mockAdapter.acknowledgeRecommendation(recId, payload)
+    );
   },
 
   async ingestTelemetryBatch(
     payload: BatchTelemetryIngestRequest | TelemetryBatchRequest
   ): Promise<BatchTelemetryResponse> {
-    if (USE_MOCK) {
-      return mockAdapter.ingestTelemetryBatch(payload);
-    }
+    return executeWithFallback(
+      async () => {
+        let body: BatchTelemetryIngestRequest;
+        if ((payload as BatchTelemetryIngestRequest).measurements) {
+          body = payload as BatchTelemetryIngestRequest;
+        } else {
+          const p = payload as TelemetryBatchRequest;
+          body = {
+            measurements: (p.batch || []).map((b) => ({
+              astronaut_id: p.astronaut_id || 'astro-101',
+              domain_id: b.domain_id,
+              metric_name: b.metric_name || b.metric_id,
+              timestamp: b.timestamp,
+              value: b.value,
+              unit: b.unit,
+              quality: b.quality,
+              provenance: b.provenance,
+              modality: b.modality,
+              note: b.note,
+            })),
+          };
+        }
 
-    // Ensure format matches BatchTelemetryIngestRequest { measurements: [...] }
-    let body: BatchTelemetryIngestRequest;
-    if ((payload as BatchTelemetryIngestRequest).measurements) {
-      body = payload as BatchTelemetryIngestRequest;
-    } else {
-      const p = payload as TelemetryBatchRequest;
-      body = {
-        measurements: (p.batch || []).map((b) => ({
-          astronaut_id: p.astronaut_id || 'astro-101',
-          domain_id: b.domain_id,
-          metric_name: b.metric_name || b.metric_id,
-          timestamp: b.timestamp,
-          value: b.value,
-          unit: b.unit,
-          quality: b.quality,
-          provenance: b.provenance,
-          modality: b.modality,
-          note: b.note,
-        })),
-      };
-    }
-
-    const res = await fetch(`${API_BASE_URL}/api/v1/telemetry/batch`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to ingest telemetry batch`);
-    return res.json();
+        const res = await fetch(`${API_BASE_URL}/api/v1/telemetry/batch`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to ingest telemetry batch`);
+        return res.json();
+      },
+      () => mockAdapter.ingestTelemetryBatch(payload)
+    );
   },
 
   async logOperationalRisk(
     astronautId: string = 'astro-101',
     record: OperationalRiskCreateRequest
   ): Promise<OperationalRiskResponse> {
-    if (USE_MOCK) {
-      return mockAdapter.logOperationalRisk(astronautId, record);
-    }
-    const res = await fetch(`${API_BASE_URL}/api/v1/astronauts/${astronautId}/operational-risks`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(record),
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to log operational risk`);
-    return res.json();
+    return executeWithFallback(
+      async () => {
+        const res = await fetch(`${API_BASE_URL}/api/v1/astronauts/${astronautId}/operational-risks`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(record),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to log operational risk`);
+        return res.json();
+      },
+      () => mockAdapter.logOperationalRisk(astronautId, record)
+    );
   },
 
   async getOperationalRisks(astronautId: string = 'astro-101'): Promise<OperationalRiskResponse[]> {
-    if (USE_MOCK) {
-      return mockAdapter.getOperationalRisks(astronautId);
-    }
-    const res = await fetch(`${API_BASE_URL}/api/v1/astronauts/${astronautId}/operational-risks`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch operational risks`);
-    return res.json();
+    return executeWithFallback(
+      async () => {
+        const res = await fetch(`${API_BASE_URL}/api/v1/astronauts/${astronautId}/operational-risks`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch operational risks`);
+        return res.json();
+      },
+      () => mockAdapter.getOperationalRisks(astronautId)
+    );
   },
 };
