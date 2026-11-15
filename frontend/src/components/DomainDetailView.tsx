@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { DomainDetailResponse, MetricDetail } from '../types/api';
+import { DomainDetailResponse, MetricDetail, DomainMetricDetail, MetricSeriesPoint } from '../types/api';
 import { StatusBadge, QualityBadge } from './StatusBadge';
 import { getDomainIcon } from './DomainCard';
 import {
@@ -33,26 +33,31 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
   onOpenTelemetryForDomain,
 }) => {
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | 'mission'>('7d');
+  const getMetricKey = (m?: DomainMetricDetail) => (m ? m.metric_name || (m as any).id || (m as any).name || '' : '');
+
   const [selectedMetricId, setSelectedMetricId] = useState<string>(
-    detail.metrics[0]?.id || ''
+    detail.metrics[0] ? getMetricKey(detail.metrics[0]) : ''
   );
   const [includeSuspectOutliers, setIncludeSuspectOutliers] = useState<boolean>(false);
 
-  const selectedMetric: MetricDetail | undefined =
-    detail.metrics.find((m) => m.id === selectedMetricId) || detail.metrics[0];
+  const selectedMetric: DomainMetricDetail | undefined =
+    detail.metrics.find((m) => getMetricKey(m) === selectedMetricId) || detail.metrics[0];
+
+  const metricKey = getMetricKey(selectedMetric);
+  const metricDisplayName = selectedMetric ? (selectedMetric as any).name || selectedMetric.metric_name || (selectedMetric as any).id : 'Metric';
 
   // Determine maximum mission day in dataset for relative time-window filtering
-  const allDays = (selectedMetric?.series || []).map((s) => s.mission_day);
+  const allDays = (selectedMetric?.series || []).map((s: MetricSeriesPoint) => s.mission_day || 42);
   const maxMissionDay = allDays.length > 0 ? Math.max(...allDays) : 84;
 
   // Filter series according to selected timeRange
   const filteredSeries = useMemo(() => {
     if (!selectedMetric?.series) return [];
     if (timeRange === '7d') {
-      return selectedMetric.series.filter((s) => s.mission_day >= maxMissionDay - 7);
+      return selectedMetric.series.filter((s: MetricSeriesPoint) => (s.mission_day || 42) >= maxMissionDay - 7);
     }
     if (timeRange === '30d') {
-      return selectedMetric.series.filter((s) => s.mission_day >= maxMissionDay - 30);
+      return selectedMetric.series.filter((s: MetricSeriesPoint) => (s.mission_day || 42) >= maxMissionDay - 30);
     }
     return selectedMetric.series;
   }, [selectedMetric, timeRange, maxMissionDay]);
@@ -70,20 +75,20 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
     const baseMax2Sigma = baseMean + 2 * baseStdDev;
 
     const validValues = filteredSeries
-      .filter((pt) => pt.quality === 'VALID' && pt.value !== null)
-      .map((pt) => pt.value as number);
+      .filter((pt: MetricSeriesPoint) => pt.quality === 'VALID' && pt.value !== null)
+      .map((pt: MetricSeriesPoint) => pt.value as number);
 
     const suspectValues = filteredSeries
-      .filter((pt) => pt.quality === 'SUSPECT' && pt.value !== null)
-      .map((pt) => pt.value as number);
+      .filter((pt: MetricSeriesPoint) => pt.quality === 'SUSPECT' && pt.value !== null)
+      .map((pt: MetricSeriesPoint) => pt.value as number);
 
     const hasOutlier = suspectValues.length > 0;
 
     if (includeSuspectOutliers) {
       // Scale includes suspect outliers (e.g. 142.0 bpm post-exercise artifact)
       const allValues = filteredSeries
-        .filter((pt) => pt.value !== null)
-        .map((pt) => pt.value as number);
+        .filter((pt: MetricSeriesPoint) => pt.value !== null)
+        .map((pt: MetricSeriesPoint) => pt.value as number);
 
       const minVal = allValues.length > 0 ? Math.min(...allValues, baseMin2Sigma) : baseMin2Sigma;
       const maxVal = allValues.length > 0 ? Math.max(...allValues, baseMax2Sigma) : baseMax2Sigma;
@@ -113,7 +118,7 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
   // - value: original raw value (or null for MISSING)
   // - plotValue: if suspect outlier exceeds yMax and includeSuspectOutliers is false, pin to yMax for visibility
   const chartData = useMemo(() => {
-    return filteredSeries.map((pt) => {
+    return filteredSeries.map((pt: MetricSeriesPoint) => {
       let plotVal = pt.value;
       let isCappedOutlier = false;
 
@@ -124,8 +129,8 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
 
       return {
         timestamp: pt.timestamp,
-        mission_day: `Day ${pt.mission_day}`,
-        raw_day: pt.mission_day,
+        mission_day: `Day ${pt.mission_day || 42}`,
+        raw_day: pt.mission_day || 42,
         value: pt.value,
         plotValue: plotVal,
         isCappedOutlier,
@@ -201,7 +206,7 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
             <StatusBadge status={detail.status} size="lg" />
             <button
               className="aero-btn aero-btn-primary"
-              onClick={() => onOpenTelemetryForDomain(detail.domain_id, selectedMetric?.id || '')}
+              onClick={() => onOpenTelemetryForDomain(detail.domain_id, metricKey)}
             >
               <PlusCircle size={14} />
               <span>Log Domain Telemetry</span>
@@ -289,7 +294,7 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
             Sampling Protocol
           </div>
           <div style={{ fontSize: '12px', color: '#E2E8F0', marginTop: '2px', fontWeight: 600 }}>
-            {detail.cadence_policy.collection_method}
+            {detail.cadence_policy?.collection_method || 'Continuous Autonomous Biomedical Sensor Logging'}
           </div>
         </div>
 
@@ -298,7 +303,7 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
             Prescribed Cadence
           </div>
           <div style={{ fontSize: '12px', color: '#E2E8F0', marginTop: '2px', fontFamily: "'JetBrains Mono', monospace" }}>
-            Every {detail.cadence_policy.expected_frequency_hours} hours (Max Gap: {detail.cadence_policy.max_acceptable_gap_hours}h)
+            Every {detail.cadence_policy?.expected_interval_hours ?? detail.cadence_policy?.expected_frequency_hours ?? 24}h (Stale threshold: {detail.cadence_policy?.stale_after_hours ?? detail.cadence_policy?.max_acceptable_gap_hours ?? 48}h)
           </div>
         </div>
 
@@ -309,13 +314,13 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
           <div
             style={{
               fontSize: '12px',
-              color: detail.cadence_policy.last_sample_elapsed_days > 14 ? '#F87171' : '#34D399',
+              color: (detail.cadence_policy?.last_sample_elapsed_days ?? 0) > 14 ? '#F87171' : '#34D399',
               marginTop: '2px',
               fontWeight: 700,
               fontFamily: "'JetBrains Mono', monospace",
             }}
           >
-            {detail.cadence_policy.last_sample_elapsed_days} days ago
+            {detail.cadence_policy?.last_sample_elapsed_days !== undefined ? `${detail.cadence_policy.last_sample_elapsed_days} days ago` : 'Current (Nominal)'}
           </div>
         </div>
       </div>
@@ -333,25 +338,29 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
       >
         {/* Metric Selector Tabs */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-          {detail.metrics.map((m) => (
-            <button
-              key={m.id}
-              onClick={() => setSelectedMetricId(m.id)}
-              style={{
-                backgroundColor: selectedMetricId === m.id ? '#1E293B' : '#0D1320',
-                border: `1px solid ${selectedMetricId === m.id ? '#38BDF8' : '#1F2937'}`,
-                color: selectedMetricId === m.id ? '#38BDF8' : '#94A3B8',
-                borderRadius: '4px',
-                padding: '6px 14px',
-                fontSize: '12px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: "'JetBrains Mono', monospace",
-              }}
-            >
-              {m.name} ({m.unit})
-            </button>
-          ))}
+          {detail.metrics.map((m: any) => {
+            const mKey = getMetricKey(m);
+            const mName = m.name || m.metric_name || m.id;
+            return (
+              <button
+                key={mKey}
+                onClick={() => setSelectedMetricId(mKey)}
+                style={{
+                  backgroundColor: selectedMetricId === mKey ? '#1E293B' : '#0D1320',
+                  border: `1px solid ${selectedMetricId === mKey ? '#38BDF8' : '#1F2937'}`,
+                  color: selectedMetricId === mKey ? '#38BDF8' : '#94A3B8',
+                  borderRadius: '4px',
+                  padding: '6px 14px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: "'JetBrains Mono', monospace",
+                }}
+              >
+                {mName} ({m.unit})
+              </button>
+            );
+          })}
         </div>
 
         {/* Chart Controls: Suspect Outlier Toggle + Time Range */}
@@ -435,12 +444,13 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
           >
             <div>
               <div style={{ fontSize: '14px', fontWeight: 700, color: '#F8FAFC' }}>
-                {selectedMetric.name} Telemetry Trend ({timeRange.toUpperCase()})
+                {metricDisplayName} Telemetry Trend ({timeRange.toUpperCase()})
               </div>
               <div style={{ fontSize: '11px', color: '#64748B', fontFamily: "'JetBrains Mono', monospace" }}>
-                Baseline Mean: {selectedMetric.baseline.mean} {selectedMetric.baseline.unit} (Ref Range:{' '}
-                {selectedMetric.baseline.reference_range_min} - {selectedMetric.baseline.reference_range_max}{' '}
-                {selectedMetric.baseline.unit}) • Y-Scale: [{yMin}, {yMax} {selectedMetric.unit}]
+                Baseline Mean: {selectedMetric.baseline?.mean} {selectedMetric.unit} (Ref Range:{' '}
+                {selectedMetric.baseline?.reference_range_min ?? Math.round(selectedMetric.baseline?.mean - 2 * selectedMetric.baseline?.std_dev)} -{' '}
+                {selectedMetric.baseline?.reference_range_max ?? Math.round(selectedMetric.baseline?.mean + 2 * selectedMetric.baseline?.std_dev)}{' '}
+                {selectedMetric.unit}) • Y-Scale: [{yMin}, {yMax} {selectedMetric.unit}]
               </div>
             </div>
 
@@ -580,17 +590,19 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
                     }}
                   />
                   {/* Reference line for baseline mean */}
-                  <ReferenceLine
-                    y={selectedMetric.baseline.mean}
-                    stroke="#0284C7"
-                    strokeDasharray="4 4"
-                    label={{
-                      value: `Baseline Mean (${selectedMetric.baseline.mean})`,
-                      fill: '#38BDF8',
-                      fontSize: 10,
-                      position: 'insideTopRight',
-                    }}
-                  />
+                  {selectedMetric.baseline?.mean !== undefined && (
+                    <ReferenceLine
+                      y={selectedMetric.baseline.mean}
+                      stroke="#0284C7"
+                      strokeDasharray="4 4"
+                      label={{
+                        value: `Baseline Mean (${selectedMetric.baseline.mean})`,
+                        fill: '#38BDF8',
+                        fontSize: 10,
+                        position: 'insideTopRight',
+                      }}
+                    />
+                  )}
                   {/* Line strictly enforcing connectNulls={false} so MISSING breaks the line cleanly */}
                   <Line
                     type="monotone"
@@ -698,7 +710,7 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
                 </tr>
               </thead>
               <tbody>
-                {filteredSeries.map((pt, idx) => (
+                {filteredSeries.map((pt: MetricSeriesPoint, idx: number) => (
                   <tr
                     key={idx}
                     style={{

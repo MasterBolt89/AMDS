@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { OperationalRiskRecord, OperationalRiskType, AssessmentStatus } from '../types/api';
+import { OperationalRiskResponse, OperationalRiskEventType, OperationalRiskCreateRequest } from '../types/api';
 import { StatusBadge } from './StatusBadge';
-import { AlertTriangle, Plus, X, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, Plus, X } from 'lucide-react';
 
 interface OperationalRisksModalProps {
   astronautId: string;
   currentMissionDay: number;
   isOpen: boolean;
   onClose: () => void;
-  onLogRisk: (record: Omit<OperationalRiskRecord, 'id' | 'logged_at'>) => Promise<void>;
-  fetchRisks: (astronautId: string) => Promise<OperationalRiskRecord[]>;
+  onLogRisk: (record: OperationalRiskCreateRequest) => Promise<void>;
+  fetchRisks: (astronautId: string) => Promise<OperationalRiskResponse[]>;
 }
 
 export const OperationalRisksModal: React.FC<OperationalRisksModalProps> = ({
@@ -20,16 +20,20 @@ export const OperationalRisksModal: React.FC<OperationalRisksModalProps> = ({
   onLogRisk,
   fetchRisks,
 }) => {
-  const [risks, setRisks] = useState<OperationalRiskRecord[]>([]);
+  const [risks, setRisks] = useState<OperationalRiskResponse[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [showAddForm, setShowAddForm] = useState<boolean>(false);
 
   // Form fields
-  const [riskType, setRiskType] = useState<OperationalRiskType>('HYPOXIA');
-  const [riskName, setRiskName] = useState<string>('Acute Hypercapnia / CO2 Excursion');
-  const [severity, setSeverity] = useState<AssessmentStatus>('ATTENTION');
-  const [mitigationStatus, setMitigationStatus] = useState<string>('CDRA desiccant bed cycle adjusted; cabin purge initiated.');
-  const [notes, setNotes] = useState<string>('Elevated cabin ppCO2 coincided with mild morning headache.');
+  const [eventType, setEventType] = useState<OperationalRiskEventType>('EVA_INJURY_PERFORMANCE');
+  const [severity, setSeverity] = useState<string>('ATTENTION');
+  const [description, setDescription] = useState<string>(
+    'Suit cooling loop delta-T micro-fluctuation during EVA; reported acute forearm cramping and glove thermal fatigue.'
+  );
+  const [mitigationApplied, setMitigationApplied] = useState<string>(
+    'Crew assisted airlock repressurization accelerated; oral rehydration and thermal warm compress applied.'
+  );
+  const [downlinkPriority, setDownlinkPriority] = useState<string>('HIGH');
   const [submitting, setSubmitting] = useState<boolean>(false);
 
   const loadRisks = async () => {
@@ -37,6 +41,8 @@ export const OperationalRisksModal: React.FC<OperationalRisksModalProps> = ({
     try {
       const data = await fetchRisks(astronautId);
       setRisks(data);
+    } catch (e) {
+      console.error('Failed to load risks:', e);
     } finally {
       setLoading(false);
     }
@@ -55,13 +61,12 @@ export const OperationalRisksModal: React.FC<OperationalRisksModalProps> = ({
     setSubmitting(true);
     try {
       await onLogRisk({
-        astronaut_id: astronautId,
-        risk_type: riskType,
-        risk_name: riskName,
+        timestamp: new Date().toISOString(),
+        event_type: eventType,
         severity,
-        mitigation_status: mitigationStatus,
-        mission_day: currentMissionDay,
-        notes,
+        description,
+        mitigation_applied: mitigationApplied,
+        downlink_priority: downlinkPriority,
       });
       setShowAddForm(false);
       await loadRisks();
@@ -86,7 +91,7 @@ export const OperationalRisksModal: React.FC<OperationalRisksModalProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <AlertTriangle size={20} color="#F59E0B" />
             <h3 style={{ margin: 0, fontSize: '16px', color: '#F8FAFC' }}>
-              Operational Mission Risk Ledger
+              Operational Mission Risk Ledger ({astronautId})
             </h3>
           </div>
           <button
@@ -131,11 +136,11 @@ export const OperationalRisksModal: React.FC<OperationalRisksModalProps> = ({
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '11px', color: '#94A3B8', marginBottom: '4px' }}>
-                  Risk Type:
+                  Risk Event Type:
                 </label>
                 <select
-                  value={riskType}
-                  onChange={(e) => setRiskType(e.target.value as OperationalRiskType)}
+                  value={eventType}
+                  onChange={(e) => setEventType(e.target.value as OperationalRiskEventType)}
                   style={{
                     width: '100%',
                     backgroundColor: '#111827',
@@ -146,10 +151,10 @@ export const OperationalRisksModal: React.FC<OperationalRisksModalProps> = ({
                     fontSize: '12px',
                   }}
                 >
-                  <option value="HYPOXIA">Hypoxia / Atmospheric Excursion</option>
-                  <option value="DECOMPRESSION_SICKNESS">Decompression Sickness (DCS)</option>
-                  <option value="EVA_INJURY">EVA Orthopedic / Pressure Suit Injury</option>
-                  <option value="REENTRY_LANDING_LOAD">Re-entry / High-G Landing Load</option>
+                  <option value="EVA_INJURY_PERFORMANCE">EVA Spacewalk / Pressure Suit Injury</option>
+                  <option value="HYPOXIA_EVENT">Hypoxia / Atmospheric Gas Excursion</option>
+                  <option value="DCS_CONCERN">Decompression Sickness (DCS)</option>
+                  <option value="DYNAMIC_LOAD_EVENT">Dynamic High-G Landing / Re-entry Load</option>
                 </select>
               </div>
 
@@ -159,7 +164,7 @@ export const OperationalRisksModal: React.FC<OperationalRisksModalProps> = ({
                 </label>
                 <select
                   value={severity}
-                  onChange={(e) => setSeverity(e.target.value as AssessmentStatus)}
+                  onChange={(e) => setSeverity(e.target.value)}
                   style={{
                     width: '100%',
                     backgroundColor: '#111827',
@@ -171,20 +176,20 @@ export const OperationalRisksModal: React.FC<OperationalRisksModalProps> = ({
                   }}
                 >
                   <option value="NORMAL">NORMAL / RESOLVED</option>
-                  <option value="ATTENTION">ATTENTION</option>
-                  <option value="CRITICAL">CRITICAL</option>
+                  <option value="ATTENTION">ATTENTION / MEDIUM</option>
+                  <option value="CRITICAL">CRITICAL / HIGH</option>
                 </select>
               </div>
             </div>
 
             <div style={{ marginBottom: '12px' }}>
               <label style={{ display: 'block', fontSize: '11px', color: '#94A3B8', marginBottom: '4px' }}>
-                Event / Risk Title:
+                Event Description:
               </label>
-              <input
-                type="text"
-                value={riskName}
-                onChange={(e) => setRiskName(e.target.value)}
+              <textarea
+                rows={2}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
                 style={{
                   width: '100%',
                   backgroundColor: '#111827',
@@ -201,12 +206,12 @@ export const OperationalRisksModal: React.FC<OperationalRisksModalProps> = ({
 
             <div style={{ marginBottom: '12px' }}>
               <label style={{ display: 'block', fontSize: '11px', color: '#94A3B8', marginBottom: '4px' }}>
-                Mitigation Status / Clinical Countermeasure:
+                Mitigation Applied:
               </label>
               <input
                 type="text"
-                value={mitigationStatus}
-                onChange={(e) => setMitigationStatus(e.target.value)}
+                value={mitigationApplied}
+                onChange={(e) => setMitigationApplied(e.target.value)}
                 style={{
                   width: '100%',
                   backgroundColor: '#111827',
@@ -218,27 +223,6 @@ export const OperationalRisksModal: React.FC<OperationalRisksModalProps> = ({
                   boxSizing: 'border-box',
                 }}
                 required
-              />
-            </div>
-
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', fontSize: '11px', color: '#94A3B8', marginBottom: '4px' }}>
-                Clinical Notes:
-              </label>
-              <textarea
-                rows={2}
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                style={{
-                  width: '100%',
-                  backgroundColor: '#111827',
-                  color: '#F8FAFC',
-                  border: '1px solid #334155',
-                  borderRadius: '4px',
-                  padding: '6px 8px',
-                  fontSize: '12px',
-                  boxSizing: 'border-box',
-                }}
               />
             </div>
 
@@ -283,60 +267,64 @@ export const OperationalRisksModal: React.FC<OperationalRisksModalProps> = ({
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {risks.map((r) => (
-              <div
-                key={r.id}
-                style={{
-                  backgroundColor: '#0D1320',
-                  border: '1px solid #1F2937',
-                  borderLeft:
-                    r.severity === 'CRITICAL'
-                      ? '3px solid #EF4444'
-                      : r.severity === 'ATTENTION'
-                      ? '3px solid #F59E0B'
-                      : '3px solid #10B981',
-                  borderRadius: '4px',
-                  padding: '12px 14px',
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '10px', color: '#64748B', fontFamily: "'JetBrains Mono', monospace" }}>
-                      {r.id}
-                    </span>
-                    <strong style={{ fontSize: '13px', color: '#F8FAFC' }}>{r.risk_name}</strong>
-                    <span
-                      style={{
-                        fontSize: '10px',
-                        backgroundColor: '#1E293B',
-                        color: '#93C5FD',
-                        padding: '1px 6px',
-                        borderRadius: '2px',
-                        fontFamily: "'JetBrains Mono', monospace",
-                      }}
-                    >
-                      {r.risk_type}
-                    </span>
+            {risks.map((r) => {
+              const sev = (r.severity || 'ATTENTION').toUpperCase();
+              return (
+                <div
+                  key={r.id}
+                  style={{
+                    backgroundColor: '#0D1320',
+                    border: '1px solid #1F2937',
+                    borderLeft:
+                      sev === 'CRITICAL' || sev === 'HIGH'
+                        ? '3px solid #EF4444'
+                        : sev === 'ATTENTION' || sev === 'MEDIUM'
+                        ? '3px solid #F59E0B'
+                        : '3px solid #10B981',
+                    borderRadius: '4px',
+                    padding: '12px 14px',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '10px', color: '#64748B', fontFamily: "'JetBrains Mono', monospace" }}>
+                        {r.id}
+                      </span>
+                      <strong style={{ fontSize: '13px', color: '#F8FAFC' }}>
+                        {r.risk_name || r.description?.slice(0, 50) + '...'}
+                      </strong>
+                      <span
+                        style={{
+                          fontSize: '10px',
+                          backgroundColor: '#1E293B',
+                          color: '#93C5FD',
+                          padding: '1px 6px',
+                          borderRadius: '2px',
+                          fontFamily: "'JetBrains Mono', monospace",
+                        }}
+                      >
+                        {r.event_type || r.risk_type}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '11px', color: '#94A3B8', fontFamily: "'JetBrains Mono', monospace" }}>
+                        {r.timestamp?.slice(0, 10)}
+                      </span>
+                      <StatusBadge status={sev === 'HIGH' ? 'CRITICAL' : sev === 'MEDIUM' ? 'ATTENTION' : 'NORMAL'} size="sm" />
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '11px', color: '#94A3B8', fontFamily: "'JetBrains Mono', monospace" }}>
-                      Sol {r.mission_day}
-                    </span>
-                    <StatusBadge status={r.severity} size="sm" />
+
+                  <div style={{ fontSize: '12px', color: '#E2E8F0', marginBottom: '4px' }}>
+                    {r.description}
+                  </div>
+
+                  <div style={{ fontSize: '12px', color: '#CBD5E1' }}>
+                    <strong style={{ color: '#38BDF8' }}>Mitigation Applied: </strong>
+                    {r.mitigation_applied || r.mitigation_status}
                   </div>
                 </div>
-
-                <div style={{ fontSize: '12px', color: '#CBD5E1', marginBottom: '4px' }}>
-                  <strong style={{ color: '#38BDF8' }}>Mitigation:</strong> {r.mitigation_status}
-                </div>
-
-                {r.notes && (
-                  <div style={{ fontSize: '11px', color: '#94A3B8', fontStyle: 'italic' }}>
-                    Note: {r.notes}
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

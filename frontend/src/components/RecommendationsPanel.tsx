@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ClosedLoopRecommendation, RecommendationWorkflowStep } from '../types/api';
+import { RecommendationItem, RecommendationWorkflowStep } from '../types/api';
 import {
   ShieldAlert,
   Radio,
@@ -8,10 +8,11 @@ import {
   AlertOctagon,
   Clock,
   ArrowRight,
+  TrendingUp,
 } from 'lucide-react';
 
 interface RecommendationsPanelProps {
-  recommendations: ClosedLoopRecommendation[];
+  recommendations: RecommendationItem[];
   astronautId: string;
   onAcknowledge: (recId: string, actionTakenNote: string) => Promise<void>;
 }
@@ -26,8 +27,9 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
   const [actionNote, setActionNote] = useState<string>('');
   const [submitting, setSubmitting] = useState<boolean>(false);
 
-  const handleOpenModal = (rec: ClosedLoopRecommendation) => {
-    setSelectedRecId(rec.id);
+  const handleOpenModal = (rec: RecommendationItem) => {
+    const rId = rec.recommendation_id || (rec as any).id;
+    setSelectedRecId(rId);
     setActionNote(
       rec.reassessment.action_taken_note ||
         'Countermeasure initiated: Bedtime shifted 45min earlier, pre-sleep blue-depleted lighting protocol engaged, cycle ergometer rescheduled.'
@@ -76,14 +78,22 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {recommendations.map((rec) => {
-            const isAcknowledged = rec.reassessment.status === 'ACKNOWLEDGED';
+            const rId = rec.recommendation_id || (rec as any).id;
+            const isAcknowledged =
+              rec.reassessment.status === 'ACKNOWLEDGED' ||
+              rec.reassessment.status === 'RESOLVED';
+            const windowHours =
+              rec.reassessment.reassess_window_hours ||
+              (rec.reassessment as any).expected_window_hours ||
+              24;
+            const isImproved = rec.reassessment.outcome === 'IMPROVED';
 
             return (
               <div
-                key={rec.id}
+                key={rId}
                 style={{
                   backgroundColor: '#0D1320',
-                  border: '1px solid #1F2937',
+                  border: isImproved ? '1px solid #059669' : '1px solid #1F2937',
                   borderRadius: '6px',
                   padding: '20px',
                 }}
@@ -112,14 +122,34 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
                         border: '1px solid #78350F',
                       }}
                     >
-                      {rec.id}
+                      {rId}
                     </span>
                     <span style={{ fontSize: '15px', fontWeight: 700, color: '#F8FAFC' }}>
-                      {rec.title}
+                      {rec.title || `Intervention for Finding ${rec.finding_id}`}
                     </span>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {isImproved && (
+                      <span
+                        style={{
+                          fontSize: '11px',
+                          fontFamily: "'JetBrains Mono', monospace",
+                          fontWeight: 700,
+                          padding: '3px 8px',
+                          borderRadius: '3px',
+                          backgroundColor: '#064E3B',
+                          color: '#34D399',
+                          border: '1px solid #059669',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                        }}
+                      >
+                        <TrendingUp size={12} />
+                        OUTCOME: IMPROVED
+                      </span>
+                    )}
                     <span
                       style={{
                         fontSize: '11px',
@@ -169,10 +199,9 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
                     }}
                   >
                     {WORKFLOW_STEPS.map((step, idx) => {
-                      const isCurrent = rec.current_step === step;
-                      const isPassed =
-                        WORKFLOW_STEPS.indexOf(rec.current_step) >= idx ||
-                        (isAcknowledged && step === 'Act');
+                      const isReassessStep = step === 'Reassess';
+                      const isCurrent = isAcknowledged ? isReassessStep : step === 'Act';
+                      const isPassed = isAcknowledged ? true : idx < 3;
 
                       return (
                         <React.Fragment key={step}>
@@ -347,12 +376,12 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <Clock size={13} color="#94A3B8" />
                       <span style={{ fontSize: '11px', color: '#94A3B8' }}>
-                        Reassessment Due: Sol {rec.reassessment.due_mission_day} ({rec.reassessment.expected_window_hours}h window)
+                        Reassessment Window: {windowHours}h • Due: Sol {rec.reassessment.due_mission_day || 'Next Cycle'}
                       </span>
                     </div>
 
                     <div style={{ fontSize: '11px', color: '#94A3B8' }}>
-                      Outcome: <strong style={{ color: '#E2E8F0' }}>{rec.reassessment.outcome}</strong>
+                      Outcome: <strong style={{ color: isImproved ? '#34D399' : '#E2E8F0' }}>{rec.reassessment.outcome}</strong>
                     </div>
                   </div>
 

@@ -60,19 +60,8 @@ export const DomainCard: React.FC<DomainCardProps> = ({ domain, onSelect }) => {
     borderColor = '#D97706';
   }
 
-  const delta = domain.headline_metric?.delta_from_baseline_pct;
-  const deltaColor =
-    delta === undefined || delta === null
-      ? '#94A3B8'
-      : delta > 0
-      ? isAttention || isCritical
-        ? '#F59E0B'
-        : '#34D399'
-      : delta < -10
-      ? isAttention || isCritical
-        ? '#F59E0B'
-        : '#34D399'
-      : '#34D399';
+  const isMetricObject = typeof domain.headline_metric === 'object' && domain.headline_metric !== null;
+  const isMetricString = typeof domain.headline_metric === 'string' && domain.headline_metric.trim().length > 0;
 
   return (
     <div
@@ -170,11 +159,30 @@ export const DomainCard: React.FC<DomainCardProps> = ({ domain, onSelect }) => {
                 {domain.status_reason || 'Biological assay cartridge overdue. Telemetry inputs insufficient for confidence scoring.'}
               </div>
             </div>
-          ) : domain.headline_metric ? (
+          ) : isMetricString ? (
+            <div>
+              <div style={{ fontSize: '10px', color: '#64748B', textTransform: 'uppercase', marginBottom: '4px', fontFamily: "'JetBrains Mono', monospace" }}>
+                Headline Telemetry
+              </div>
+              <div
+                style={{
+                  fontSize: '15px',
+                  fontWeight: 700,
+                  color: isAttention ? '#FCD34D' : '#F8FAFC',
+                  fontFamily: "'JetBrains Mono', monospace",
+                  lineHeight: '1.3',
+                }}
+              >
+                {domain.headline_metric as string}
+              </div>
+            </div>
+          ) : isMetricObject ? (
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '4px' }}>
-                <span style={{ fontSize: '11px', color: '#94A3B8' }}>{domain.headline_metric.name}</span>
-                <QualityBadge quality={domain.headline_metric.quality} />
+                <span style={{ fontSize: '11px', color: '#94A3B8' }}>{(domain.headline_metric as any).name || 'Metric'}</span>
+                {(domain.headline_metric as any).quality && (
+                  <QualityBadge quality={(domain.headline_metric as any).quality} />
+                )}
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
                 <span
@@ -185,27 +193,31 @@ export const DomainCard: React.FC<DomainCardProps> = ({ domain, onSelect }) => {
                     fontFamily: "'JetBrains Mono', monospace",
                   }}
                 >
-                  {domain.headline_metric.value !== null ? domain.headline_metric.value : '—'}
+                  {(domain.headline_metric as any).value !== null ? (domain.headline_metric as any).value : '—'}
                 </span>
-                <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 600 }}>{domain.headline_metric.unit}</span>
-                {domain.headline_metric.baseline_mean !== null && (
+                <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 600 }}>
+                  {(domain.headline_metric as any).unit}
+                </span>
+                {(domain.headline_metric as any).delta_from_baseline_pct !== undefined && (
                   <span
                     style={{
                       fontSize: '11px',
-                      color: deltaColor,
+                      color: isAttention ? '#F59E0B' : '#34D399',
                       fontFamily: "'JetBrains Mono', monospace",
                       marginLeft: 'auto',
                       fontWeight: 600,
                     }}
                   >
-                    {delta !== undefined && delta !== null && delta > 0 ? `+${delta}%` : `${delta}%`}{' '}
-                    <span style={{ color: '#64748B', fontWeight: 400 }}>vs base ({domain.headline_metric.baseline_mean})</span>
+                    {(domain.headline_metric as any).delta_from_baseline_pct > 0 ? `+` : ''}
+                    {(domain.headline_metric as any).delta_from_baseline_pct}%
                   </span>
                 )}
               </div>
             </div>
           ) : (
-            <div style={{ fontSize: '12px', color: '#64748B' }}>No active headline metric configured</div>
+            <div style={{ fontSize: '12px', color: '#64748B' }}>
+              {domain.status_reason || 'No headline metric reported'}
+            </div>
           )}
         </div>
 

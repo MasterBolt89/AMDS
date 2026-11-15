@@ -1,6 +1,6 @@
 /**
  * NASA AMPCS (Aerospace Medical Prognostics & Clinical Surveillance)
- * Locked /api/v1 TypeScript Contract
+ * Locked /api/v1 TypeScript Contract & OpenAPI Schema Parity
  */
 
 export type DomainId =
@@ -33,7 +33,9 @@ export type EvidenceType =
   | 'STATISTICAL_BASELINE_DRIFT'
   | 'EXPERIMENTAL_HEURISTIC';
 
-export type ReassessmentStatus = 'PENDING' | 'ACKNOWLEDGED';
+export type RecommendationStatus = 'ACTIVE' | 'ACKNOWLEDGED' | 'RESOLVED';
+
+export type ReassessmentStatus = 'PENDING' | 'ACKNOWLEDGED' | 'ACTIVE' | 'RESOLVED';
 
 export type ReassessmentOutcome =
   | 'PENDING'
@@ -44,38 +46,53 @@ export type ReassessmentOutcome =
 
 export type RecommendationWorkflowStep = 'Collect' | 'Assess' | 'Explain' | 'Act' | 'Reassess';
 
-export type OperationalRiskType =
-  | 'HYPOXIA'
-  | 'DECOMPRESSION_SICKNESS'
-  | 'EVA_INJURY'
-  | 'REENTRY_LANDING_LOAD';
+export type MissionProfile = 'ISS_LEO' | 'MARS_TRANSIT';
 
-export interface AstronautInfo {
+export type OperationalRiskEventType =
+  | 'HYPOXIA_EVENT'
+  | 'DCS_CONCERN'
+  | 'EVA_INJURY_PERFORMANCE'
+  | 'DYNAMIC_LOAD_EVENT';
+
+// Legacy / alias type support
+export type OperationalRiskType = OperationalRiskEventType | string;
+
+export interface AstronautSummary {
   id: string;
   callsign: string;
-  name: string;
   role: string;
-  crew_position: string;
+  mission_day: number;
+}
+
+// AstronautInfo alias for backward-compatibility
+export interface AstronautInfo extends AstronautSummary {
+  name?: string;
+  crew_position?: string;
 }
 
 export interface MissionContext {
-  mission_name: string;
-  mission_phase: string;
-  mission_day: number;
+  mission_profile: MissionProfile;
   one_way_light_time_sec: number;
   live_flight_surgeon_available: boolean;
-  active_provenance: Provenance;
+  support_mode: string;
+  available_onboard_equipment: string[];
+  mission_name?: string;
+  mission_phase?: string;
+  mission_day?: number;
+  active_provenance?: Provenance;
 }
 
 export interface DataProvenanceSummary {
   active_provenance: Provenance;
-  actual_telem_count: number;
-  manual_entry_count: number;
-  simulated_count: number;
-  last_sync_timestamp: string;
+  scenario_id?: string | null;
+  overall_completeness_pct: number;
+  actual_telem_count?: number;
+  manual_entry_count?: number;
+  simulated_count?: number;
+  last_sync_timestamp?: string;
 }
 
-export interface HeadlineMetric {
+export interface HeadlineMetricObject {
   name: string;
   value: number | null;
   unit: string;
@@ -88,12 +105,13 @@ export interface DomainSummary {
   domain_id: DomainId;
   domain_category: DomainCategory;
   display_name: string;
-  status: AssessmentStatus;
-  status_reason?: string | null;
   measurement_scope_notice: string;
-  headline_metric?: HeadlineMetric | null;
+  status: AssessmentStatus;
   completeness_pct: number;
-  last_updated: string;
+  last_updated?: string | null;
+  headline_metric: string | HeadlineMetricObject | null;
+  status_reason: string | null;
+  active_finding_count?: number;
 }
 
 export interface Citation {
@@ -102,83 +120,113 @@ export interface Citation {
   url?: string;
 }
 
-export interface CrossDomainFinding {
-  id: string;
-  title: string;
-  summary: string;
-  severity: AssessmentStatus;
+export interface FindingEvidence {
   evidence_type: EvidenceType;
-  contributing_domains: DomainId[];
-  citations: Citation[];
-  created_at: string;
+  is_validated_clinical_threshold: boolean;
+  supporting_metrics: Record<string, any>;
+  reference_source: string;
 }
 
-export interface ReassessmentInfo {
-  status: ReassessmentStatus;
-  due_mission_day: number;
-  expected_window_hours: number;
-  outcome: ReassessmentOutcome;
-  acknowledged_at?: string | null;
-  action_taken_note?: string | null;
-}
-
-export interface ClosedLoopRecommendation {
-  id: string;
-  finding_id?: string;
-  domain_id: DomainId;
+export interface Finding {
+  finding_id: string;
+  id?: string; // alias
+  severity: string;
+  is_cross_domain: boolean;
+  involved_domains: DomainId[];
+  contributing_domains?: DomainId[]; // alias
   title: string;
-  action_summary: string;
-  escalate_when: string;
-  consultation_guidance: string;
-  current_step: RecommendationWorkflowStep;
-  steps: RecommendationWorkflowStep[];
-  reassessment: ReassessmentInfo;
-  created_at: string;
+  what_changed: string;
+  why_it_matters: string;
+  summary?: string; // alias
+  evidence: FindingEvidence;
+  citations?: Citation[];
+  created_at?: string;
 }
+
+export type CrossDomainFinding = Finding;
+
+export interface ReassessmentTracker {
+  status: RecommendationStatus | string;
+  due_mission_day: number;
+  reassess_window_hours: number;
+  expected_window_hours?: number; // alias
+  outcome: ReassessmentOutcome;
+  action_taken_note?: string | null;
+  acknowledged_at?: string | null;
+  baseline_at_trigger?: number | null;
+  latest_followup_value?: number | null;
+}
+
+export interface RecommendationItem {
+  recommendation_id: string;
+  id?: string; // alias
+  finding_id: string;
+  action_summary: string;
+  consultation_guidance: string;
+  escalate_when: string;
+  reassessment: ReassessmentTracker;
+  domain_id?: DomainId;
+  title?: string;
+  current_step?: RecommendationWorkflowStep;
+  steps?: RecommendationWorkflowStep[];
+  created_at?: string;
+}
+
+export type ClosedLoopRecommendation = RecommendationItem;
 
 export interface DashboardResponse {
-  astronaut: AstronautInfo;
+  astronaut: AstronautSummary;
   mission_context: MissionContext;
   data_provenance_summary: DataProvenanceSummary;
   domains: DomainSummary[];
-  findings: CrossDomainFinding[];
-  recommendations: ClosedLoopRecommendation[];
+  findings: Finding[];
+  recommendations: RecommendationItem[];
   operational_risk_records_count: number;
 }
 
 export interface MetricSeriesPoint {
   timestamp: string;
-  mission_day: number;
   value: number | null;
   quality: DataQuality;
   provenance: Provenance;
-  modality: Modality;
+  sensor_id?: string | null;
   note?: string | null;
+  mission_day?: number;
+  modality?: Modality;
 }
 
-export interface MetricBaseline {
+export interface DomainMetricBaseline {
+  window_label: string;
+  is_validated_standard: boolean;
   mean: number;
   std_dev: number;
-  reference_range_min: number;
-  reference_range_max: number;
-  unit: string;
+  sample_count: number;
+  reference_range_min?: number;
+  reference_range_max?: number;
+  unit?: string;
   population_reference?: string;
 }
 
-export interface MetricDetail {
-  id: string;
-  name: string;
+export interface DomainMetricDetail {
+  metric_name: string;
+  id?: string; // alias
+  name?: string; // alias
   unit: string;
-  modality: Modality;
-  baseline: MetricBaseline;
+  baseline: DomainMetricBaseline;
   series: MetricSeriesPoint[];
+  modality?: Modality;
 }
 
+export type MetricDetail = DomainMetricDetail;
+
 export interface CadencePolicy {
-  expected_frequency_hours: number;
-  max_acceptable_gap_hours: number;
-  last_sample_elapsed_days: number;
-  collection_method: string;
+  expected_interval_hours: number;
+  stale_after_hours: number;
+  minimum_valid_samples_for_baseline: number;
+  expected_frequency_hours?: number; // alias
+  max_acceptable_gap_hours?: number; // alias
+  last_sample_elapsed_days?: number; // calculated / populated
+  collection_method?: string;
 }
 
 export interface DomainDetailResponse {
@@ -189,59 +237,118 @@ export interface DomainDetailResponse {
   status_reason?: string | null;
   measurement_scope_notice: string;
   cadence_policy: CadencePolicy;
-  metrics: MetricDetail[];
+  metrics: DomainMetricDetail[];
 }
 
-export interface TelemetryBatchItem {
-  domain_id: DomainId;
-  metric_id: string;
-  value: number;
-  unit: string;
-  timestamp: string;
-  mission_day: number;
-  provenance: Provenance;
-  modality: Modality;
-  quality: DataQuality;
-  note?: string;
-}
-
-export interface TelemetryBatchRequest {
+export interface TelemetryMeasurementItem {
   astronaut_id: string;
-  batch: TelemetryBatchItem[];
+  domain_id: DomainId;
+  metric_name: string;
+  timestamp: string;
+  value: number | null;
+  unit: string;
+  quality?: DataQuality;
+  provenance?: Provenance;
+  modality?: Modality;
+  sensor_id?: string | null;
+  note?: string | null;
+  mission_day?: number;
 }
 
-export interface AcknowledgeRecommendationRequest {
+export interface BatchTelemetryIngestRequest {
+  measurements: TelemetryMeasurementItem[];
+}
+
+// Backward compatible alias
+export interface TelemetryBatchRequest {
+  astronaut_id?: string;
+  batch?: any[];
+  measurements?: TelemetryMeasurementItem[];
+}
+
+export interface BatchTelemetryResponse {
+  ingested_count: number;
+  rejected_count: number;
+  reassessment_evaluations?: any[];
+  message: string;
+}
+
+export interface RecommendationAcknowledgeRequest {
   astronaut_id: string;
   action_taken_note: string;
   acknowledged_at: string;
 }
 
-export interface OperationalRiskRecord {
+export type AcknowledgeRecommendationRequest = RecommendationAcknowledgeRequest;
+
+export interface RecommendationAcknowledgeResponse {
+  recommendation_id: string;
+  status: RecommendationStatus;
+  acknowledged_at: string;
+  reassess_after: string;
+  baseline_at_trigger?: number | null;
+  message: string;
+}
+
+export interface OperationalRiskCreateRequest {
+  timestamp: string;
+  event_type: OperationalRiskEventType;
+  severity: string;
+  description: string;
+  mitigation_applied: string;
+  downlink_priority?: string;
+}
+
+export interface OperationalRiskResponse {
   id: string;
   astronaut_id: string;
-  risk_type: OperationalRiskType;
-  risk_name: string;
-  severity: AssessmentStatus;
-  mitigation_status: string;
-  logged_at: string;
-  mission_day: number;
-  notes: string;
+  timestamp: string;
+  event_type: OperationalRiskEventType;
+  severity: string;
+  description: string;
+  mitigation_applied: string;
+  downlink_priority: string;
+  // UI aliases
+  risk_type?: OperationalRiskEventType;
+  risk_name?: string;
+  mission_day?: number;
+  notes?: string;
+  mitigation_status?: string;
+}
+
+export type OperationalRiskRecord = OperationalRiskResponse;
+
+export interface SimulationScenarioItem {
+  scenario_id: string;
+  id?: string; // alias
+  name: string;
+  description: string;
+  mission_profile: MissionProfile;
+  hazards_featured: string[];
+  astronaut_id?: string;
+  mission_context?: MissionContext;
+}
+
+export type SimulationScenario = SimulationScenarioItem;
+
+export interface SimulationScenarioListResponse {
+  scenarios: SimulationScenarioItem[];
+}
+
+export interface SimulationLoadRequest {
+  scenario_id: string;
+  astronaut_id: string;
 }
 
 export interface AssessmentHistoryItem {
-  id: string;
-  mission_day: number;
   timestamp: string;
   domain_id: DomainId;
-  status: AssessmentStatus;
-  headline_value: number | null;
-  unit: string;
+  previous_status: AssessmentStatus;
+  new_status: AssessmentStatus;
+  reason: string;
 }
 
-export interface SimulationScenario {
-  id: string;
-  name: string;
-  description: string;
+export interface AssessmentHistoryResponse {
   astronaut_id: string;
-  mission_context: MissionContext;
+  history: AssessmentHistoryItem[];
 }

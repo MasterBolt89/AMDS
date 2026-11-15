@@ -3,9 +3,10 @@ import {
   DashboardResponse,
   DomainDetailResponse,
   DomainId,
-  SimulationScenario,
-  TelemetryBatchRequest,
-  OperationalRiskRecord,
+  SimulationScenarioItem,
+  AstronautSummary,
+  BatchTelemetryIngestRequest,
+  OperationalRiskCreateRequest,
 } from './types/api';
 import { apiClient } from './api/client';
 import { Header } from './components/Header';
@@ -19,8 +20,10 @@ import { Activity, ShieldCheck, CheckCircle2, Wind } from 'lucide-react';
 
 export const App: React.FC = () => {
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
-  const [scenarios, setScenarios] = useState<SimulationScenario[]>([]);
-  const [activeScenarioId, setActiveScenarioId] = useState<string>('circadian_drift_and_fatigue_01');
+  const [scenarios, setScenarios] = useState<SimulationScenarioItem[]>([]);
+  const [astronauts, setAstronauts] = useState<AstronautSummary[]>([]);
+  const [activeAstronautId, setActiveAstronautId] = useState<string>('astro-101');
+  const [activeScenarioId, setActiveScenarioId] = useState<string>('nominal_iss_baseline');
   const [activeDomainDetail, setActiveDomainDetail] = useState<DomainDetailResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +31,7 @@ export const App: React.FC = () => {
   // Modals state
   const [isTelemetryModalOpen, setIsTelemetryModalOpen] = useState<boolean>(false);
   const [telemetryDefaultDomain, setTelemetryDefaultDomain] = useState<DomainId>('immune_microbio');
-  const [telemetryDefaultMetric, setTelemetryDefaultMetric] = useState<string>('imm_iga');
+  const [telemetryDefaultMetric, setTelemetryDefaultMetric] = useState<string>('crp_biomarker_mg_l');
   const [isRisksModalOpen, setIsRisksModalOpen] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -39,17 +42,30 @@ export const App: React.FC = () => {
     }, 4000);
   };
 
-  const loadData = async () => {
+  // Step 2: Dynamic Astronaut Initialization & Scenario Population on mount
+  const initializeApp = async () => {
     setLoading(true);
     setError(null);
     try {
-      const [dash, scens] = await Promise.all([
-        apiClient.getDashboard(),
-        apiClient.getScenarios(),
-      ]);
+      // 1. Fetch astronauts dynamically
+      const astroList = await apiClient.getAstronauts();
+      setAstronauts(astroList);
+      const primaryAstronautId = astroList[0]?.id || 'astro-101';
+      setActiveAstronautId(primaryAstronautId);
+
+      // 2. Fetch scenarios list from GET /api/v1/simulation/scenarios
+      const scenarioList = await apiClient.getScenarios();
+      setScenarios(scenarioList);
+
+      // 3. Fetch dashboard for primary astronaut
+      const dash = await apiClient.getDashboard(primaryAstronautId);
       setDashboard(dash);
-      setScenarios(scens);
+
+      if (dash.data_provenance_summary?.scenario_id) {
+        setActiveScenarioId(dash.data_provenance_summary.scenario_id);
+      }
     } catch (err: any) {
+      console.error('Initialization error:', err);
       setError(err?.message || 'Failed to initialize AMPCS telemetry dashboard');
     } finally {
       setLoading(false);
@@ -57,21 +73,39 @@ export const App: React.FC = () => {
   };
 
   useEffect(() => {
-    loadData();
+    initializeApp();
   }, []);
+
+  const handleSelectAstronaut = async (astronautId: string) => {
+    setLoading(true);
+    try {
+      setActiveAstronautId(astronautId);
+      const updatedDash = await apiClient.getDashboard(astronautId);
+      setDashboard(updatedDash);
+      if (activeDomainDetail) {
+        const updatedDetail = await apiClient.getDomainDetail(astronautId, activeDomainDetail.domain_id);
+        setActiveDomainDetail(updatedDetail);
+      }
+      showToast(`Switched crew profile to ${updatedDash.astronaut.callsign} (${astronautId})`);
+    } catch (err: any) {
+      setError(err?.message || `Failed to switch astronaut profile to ${astronautId}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleScenarioChange = async (scenarioId: string) => {
     setLoading(true);
     try {
-      const updatedDash = await apiClient.loadSimulationScenario(scenarioId);
+      const updatedDash = await apiClient.loadSimulationScenario(scenarioId, activeAstronautId);
       setActiveScenarioId(scenarioId);
       setDashboard(updatedDash);
       if (activeDomainDetail) {
-        // Refresh domain detail for the new scenario
-        const updatedDetail = await apiClient.getDomainDetail(activeDomainDetail.domain_id);
+        const updatedDetail = await apiClient.getDomainDetail(activeAstronautId, activeDomainDetail.domain_id);
         setActiveDomainDetail(updatedDetail);
       }
-      showToast(`Switched scenario to ${scenarioId === 'nominal_iss_leo_02' ? 'ISS LEO Nominal' : 'Mars Transit Deep Space'}`);
+      const scName = scenarios.find((s) => (s.scenario_id || (s as any).id) === scenarioId)?.name || scenarioId;
+      showToast(`Loaded Scenario: ${scName}`);
     } catch (err: any) {
       setError(err?.message || 'Failed to switch scenario');
     } finally {
@@ -81,7 +115,7 @@ export const App: React.FC = () => {
 
   const handleSelectDomain = async (domainId: DomainId) => {
     try {
-      const detail = await apiClient.getDomainDetail(domainId);
+      const detail = await apiClient.getDomainDetail(activeAstronautId, domainId);
       setActiveDomainDetail(detail);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: any) {
@@ -93,12 +127,11 @@ export const App: React.FC = () => {
     if (!dashboard) return;
     try {
       await apiClient.acknowledgeRecommendation(recId, {
-        astronaut_id: dashboard.astronaut.id,
+        astronaut_id: activeAstronautId,
         action_taken_note: actionTakenNote,
         acknowledged_at: new Date().toISOString(),
       });
-      // Refresh dashboard
-      const refreshed = await apiClient.getDashboard(dashboard.astronaut.id);
+      const refreshed = await apiClient.getDashboard(activeAstronautId);
       setDashboard(refreshed);
       showToast(`Recommendation ${recId} successfully acknowledged & audit logged`);
     } catch (err: any) {
@@ -106,28 +139,27 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleIngestTelemetry = async (req: TelemetryBatchRequest) => {
+  const handleIngestTelemetry = async (req: BatchTelemetryIngestRequest) => {
     try {
       const result = await apiClient.ingestTelemetryBatch(req);
-      const refreshedDash = await apiClient.getDashboard();
+      const refreshedDash = await apiClient.getDashboard(activeAstronautId);
       setDashboard(refreshedDash);
       if (activeDomainDetail) {
-        const refreshedDetail = await apiClient.getDomainDetail(activeDomainDetail.domain_id);
+        const refreshedDetail = await apiClient.getDomainDetail(activeAstronautId, activeDomainDetail.domain_id);
         setActiveDomainDetail(refreshedDetail);
       }
-      showToast(`Successfully ingested ${result.ingested_count} telemetry frame(s) into ledger`);
+      showToast(result.message || `Successfully ingested ${result.ingested_count} telemetry measurement(s)`);
     } catch (err: any) {
       setError(err?.message || 'Failed to ingest telemetry batch');
     }
   };
 
-  const handleLogRisk = async (record: Omit<OperationalRiskRecord, 'id' | 'logged_at'>) => {
-    if (!dashboard) return;
+  const handleLogRisk = async (record: OperationalRiskCreateRequest) => {
     try {
-      await apiClient.logOperationalRisk(dashboard.astronaut.id, record);
-      const refreshedDash = await apiClient.getDashboard(dashboard.astronaut.id);
+      await apiClient.logOperationalRisk(activeAstronautId, record);
+      const refreshedDash = await apiClient.getDashboard(activeAstronautId);
       setDashboard(refreshedDash);
-      showToast(`Operational risk logged: ${record.risk_name}`);
+      showToast(`Operational risk logged: ${record.description.slice(0, 40)}...`);
     } catch (err: any) {
       setError(err?.message || 'Failed to log operational risk');
     }
@@ -179,7 +211,7 @@ export const App: React.FC = () => {
       >
         <div style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>TELEMETRY STREAM ERROR</div>
         <div style={{ fontSize: '13px', color: '#CBD5E1', marginBottom: '16px' }}>{error}</div>
-        <button className="aero-btn aero-btn-primary" onClick={loadData}>
+        <button className="aero-btn aero-btn-primary" onClick={initializeApp}>
           Retry Connection
         </button>
       </div>
@@ -188,7 +220,6 @@ export const App: React.FC = () => {
 
   if (!dashboard) return null;
 
-  // Separate personal health domains (8) and environmental ECLSS (1)
   const personalDomains = dashboard.domains.filter((d) => d.domain_category === 'PERSONAL_HEALTH');
   const environmentalDomains = dashboard.domains.filter((d) => d.domain_category === 'ENVIRONMENTAL_ECLSS');
 
@@ -225,11 +256,14 @@ export const App: React.FC = () => {
         dashboard={dashboard}
         scenarios={scenarios}
         activeScenarioId={activeScenarioId}
+        astronauts={astronauts}
+        activeAstronautId={activeAstronautId}
+        onSelectAstronaut={handleSelectAstronaut}
         onSelectScenario={handleScenarioChange}
         onOpenRisks={() => setIsRisksModalOpen(true)}
         onOpenTelemetryModal={() => {
           setTelemetryDefaultDomain('immune_microbio');
-          setTelemetryDefaultMetric('imm_iga');
+          setTelemetryDefaultMetric('crp_biomarker_mg_l');
           setIsTelemetryModalOpen(true);
         }}
       />
@@ -335,7 +369,7 @@ export const App: React.FC = () => {
           <section>
             <RecommendationsPanel
               recommendations={dashboard.recommendations}
-              astronautId={dashboard.astronaut.id}
+              astronautId={activeAstronautId}
               onAcknowledge={handleAcknowledgeRecommendation}
             />
           </section>
@@ -344,10 +378,10 @@ export const App: React.FC = () => {
 
       {/* Ingest Telemetry Modal */}
       <TelemetryBatchModal
-        astronautId={dashboard.astronaut.id}
+        astronautId={activeAstronautId}
         defaultDomainId={telemetryDefaultDomain}
         defaultMetricId={telemetryDefaultMetric}
-        currentMissionDay={dashboard.mission_context.mission_day}
+        currentMissionDay={dashboard.astronaut?.mission_day || dashboard.mission_context?.mission_day || 42}
         isOpen={isTelemetryModalOpen}
         onClose={() => setIsTelemetryModalOpen(false)}
         onSubmit={handleIngestTelemetry}
@@ -355,8 +389,8 @@ export const App: React.FC = () => {
 
       {/* Operational Risks Modal */}
       <OperationalRisksModal
-        astronautId={dashboard.astronaut.id}
-        currentMissionDay={dashboard.mission_context.mission_day}
+        astronautId={activeAstronautId}
+        currentMissionDay={dashboard.astronaut?.mission_day || dashboard.mission_context?.mission_day || 42}
         isOpen={isRisksModalOpen}
         onClose={() => setIsRisksModalOpen(false)}
         onLogRisk={handleLogRisk}

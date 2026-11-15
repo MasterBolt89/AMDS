@@ -1,62 +1,83 @@
 import {
-  AcknowledgeRecommendationRequest,
+  AstronautSummary,
+  BatchTelemetryIngestRequest,
+  BatchTelemetryResponse,
   ClosedLoopRecommendation,
   DashboardResponse,
   DomainDetailResponse,
   DomainId,
-  OperationalRiskRecord,
-  SimulationScenario,
+  OperationalRiskCreateRequest,
+  OperationalRiskResponse,
+  RecommendationAcknowledgeRequest,
+  RecommendationAcknowledgeResponse,
+  SimulationScenarioItem,
   TelemetryBatchRequest,
 } from '../types/api';
 import {
-  INITIAL_DASHBOARD_SCENARIO_1,
-  INITIAL_DASHBOARD_SCENARIO_2,
-  INITIAL_RISK_RECORDS,
-  SCENARIO_1,
-  SCENARIO_2,
-  getInitialDomainDetails,
+  ALL_SCENARIOS,
+  INITIAL_RISK_RECORDS_SCENARIO_4,
+  buildDashboardForScenario,
+  buildDomainDetailsForScenario,
 } from '../mocks/mockData';
 
 // Environment variable configuration
-// VITE_USE_MOCK defaults to true when unset or not explicitly 'false'
+// VITE_USE_MOCK defaults to true unless explicitly 'false'
 const metaEnv = typeof import.meta !== 'undefined' && (import.meta as any).env ? (import.meta as any).env : {};
 const rawUseMock = metaEnv.VITE_USE_MOCK;
-export const USE_MOCK: boolean = rawUseMock === undefined || rawUseMock === '' || rawUseMock === 'true';
-export const API_BASE_URL: string = metaEnv.VITE_API_BASE_URL || 'http://localhost:8000';
+export const USE_MOCK: boolean = rawUseMock !== 'false';
+export const API_BASE_URL: string = metaEnv.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
 
 /**
- * Stateful In-Memory Mock Adapter
+ * Stateful In-Memory Mock Adapter Supporting All 4 Scenarios & Dynamic Astronaut
  */
 class StatefulMockAdapter {
-  private currentScenarioId: string = 'circadian_drift_and_fatigue_01';
+  private currentScenarioId: string = 'nominal_iss_baseline';
+  private currentAstronautId: string = 'astro-101';
   private dashboard!: DashboardResponse;
   private domainDetails!: Record<DomainId, DomainDetailResponse>;
-  private riskRecords!: OperationalRiskRecord[];
+  private riskRecords: OperationalRiskResponse[] = [];
 
   constructor() {
-    this.resetToScenario('circadian_drift_and_fatigue_01');
+    this.resetToScenario('nominal_iss_baseline', 'astro-101');
   }
 
-  public resetToScenario(scenarioId: string): DashboardResponse {
+  public resetToScenario(scenarioId: string, astronautId: string = 'astro-101'): DashboardResponse {
     this.currentScenarioId = scenarioId;
-    if (scenarioId === 'nominal_iss_leo_02') {
-      this.dashboard = JSON.parse(JSON.stringify(INITIAL_DASHBOARD_SCENARIO_2));
-      this.domainDetails = getInitialDomainDetails('nominal_iss_leo_02');
-      this.riskRecords = [];
+    this.currentAstronautId = astronautId;
+    this.dashboard = buildDashboardForScenario(scenarioId);
+    this.dashboard.astronaut.id = astronautId;
+    this.domainDetails = buildDomainDetailsForScenario(scenarioId);
+
+    if (scenarioId === 'eva_operational_incident_with_eclss_drift') {
+      this.riskRecords = JSON.parse(JSON.stringify(INITIAL_RISK_RECORDS_SCENARIO_4));
     } else {
-      this.dashboard = JSON.parse(JSON.stringify(INITIAL_DASHBOARD_SCENARIO_1));
-      this.domainDetails = getInitialDomainDetails('circadian_drift_and_fatigue_01');
-      this.riskRecords = JSON.parse(JSON.stringify(INITIAL_RISK_RECORDS));
+      this.riskRecords = [];
     }
     this.dashboard.operational_risk_records_count = this.riskRecords.length;
+
     return JSON.parse(JSON.stringify(this.dashboard));
   }
 
-  public getDashboard(): DashboardResponse {
+  public getAstronauts(): AstronautSummary[] {
+    return [
+      {
+        id: this.currentAstronautId,
+        callsign: 'Ares-Lead',
+        role: this.dashboard?.astronaut?.role || 'Flight Engineer & Science Officer',
+        mission_day: this.dashboard?.astronaut?.mission_day || 42,
+      },
+    ];
+  }
+
+  public getDashboard(astronautId?: string): DashboardResponse {
+    if (astronautId && astronautId !== this.currentAstronautId) {
+      this.currentAstronautId = astronautId;
+      this.dashboard.astronaut.id = astronautId;
+    }
     return JSON.parse(JSON.stringify(this.dashboard));
   }
 
-  public getDomainDetail(domainId: DomainId): DomainDetailResponse {
+  public getDomainDetail(astronautId: string, domainId: DomainId): DomainDetailResponse {
     const detail = this.domainDetails[domainId];
     if (!detail) {
       throw new Error(`Domain ${domainId} not found`);
@@ -64,15 +85,17 @@ class StatefulMockAdapter {
     return JSON.parse(JSON.stringify(detail));
   }
 
-  public getScenarios(): SimulationScenario[] {
-    return [SCENARIO_1, SCENARIO_2];
+  public getScenarios(): SimulationScenarioItem[] {
+    return ALL_SCENARIOS;
   }
 
   public acknowledgeRecommendation(
     recId: string,
-    payload: AcknowledgeRecommendationRequest
-  ): ClosedLoopRecommendation {
-    const rec = this.dashboard.recommendations.find((r) => r.id === recId);
+    payload: RecommendationAcknowledgeRequest
+  ): RecommendationAcknowledgeResponse {
+    const rec = this.dashboard.recommendations.find(
+      (r) => r.recommendation_id === recId || (r as any).id === recId
+    );
     if (!rec) {
       throw new Error(`Recommendation ${recId} not found`);
     }
@@ -81,31 +104,54 @@ class StatefulMockAdapter {
     rec.reassessment.action_taken_note = payload.action_taken_note;
     rec.current_step = 'Reassess';
 
-    return JSON.parse(JSON.stringify(rec));
+    return {
+      recommendation_id: recId,
+      status: 'ACKNOWLEDGED',
+      acknowledged_at: payload.acknowledged_at,
+      reassess_after: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
+      baseline_at_trigger: 4.3,
+      message: 'Recommendation acknowledged and intervention protocol logged.',
+    };
   }
 
-  public ingestTelemetryBatch(payload: TelemetryBatchRequest): {
-    success: boolean;
-    ingested_count: number;
-    updated_metrics: string[];
-  } {
-    const updatedMetrics: string[] = [];
+  public ingestTelemetryBatch(payload: BatchTelemetryIngestRequest | TelemetryBatchRequest): BatchTelemetryResponse {
+    const measurements =
+      (payload as BatchTelemetryIngestRequest).measurements ||
+      (payload as TelemetryBatchRequest).batch?.map((b) => ({
+        astronaut_id: (payload as TelemetryBatchRequest).astronaut_id || 'astro-101',
+        domain_id: b.domain_id,
+        metric_name: b.metric_name || b.metric_id,
+        timestamp: b.timestamp,
+        value: b.value,
+        unit: b.unit,
+        quality: b.quality,
+        provenance: b.provenance,
+        modality: b.modality,
+        note: b.note,
+      })) ||
+      [];
 
-    for (const item of payload.batch) {
+    let ingested = 0;
+
+    for (const item of measurements) {
       const domainDetail = this.domainDetails[item.domain_id];
       if (domainDetail) {
-        let metric = domainDetail.metrics.find((m) => m.id === item.metric_id);
+        let metric = domainDetail.metrics.find(
+          (m) => m.metric_name === item.metric_name || (m as any).id === item.metric_name
+        );
         if (!metric) {
           metric = {
-            id: item.metric_id,
-            name: item.metric_id,
+            metric_name: item.metric_name,
             unit: item.unit,
-            modality: item.modality,
+            modality: item.modality || 'LAB_ASSAY',
             baseline: {
-              mean: item.value,
+              window_label: 'Dynamic Baseline',
+              is_validated_standard: true,
+              mean: item.value ?? 0,
               std_dev: 1,
-              reference_range_min: item.value * 0.8,
-              reference_range_max: item.value * 1.2,
+              sample_count: 5,
+              reference_range_min: (item.value ?? 0) * 0.8,
+              reference_range_max: (item.value ?? 0) * 1.2,
               unit: item.unit,
             },
             series: [],
@@ -115,143 +161,139 @@ class StatefulMockAdapter {
 
         metric.series.push({
           timestamp: item.timestamp,
-          mission_day: item.mission_day,
+          mission_day: item.mission_day || this.dashboard.astronaut.mission_day,
           value: item.value,
-          quality: item.quality,
-          provenance: item.provenance,
-          modality: item.modality,
+          quality: item.quality || 'VALID',
+          provenance: item.provenance || 'MANUAL_ENTRY',
+          modality: item.modality || 'LAB_ASSAY',
           note: item.note,
         });
 
-        // Update domain summary in dashboard
         const domSummary = this.dashboard.domains.find((d) => d.domain_id === item.domain_id);
         if (domSummary) {
-          const deltaPct = metric.baseline.mean
-            ? Math.round(((item.value - metric.baseline.mean) / metric.baseline.mean) * 1000) / 10
-            : 0;
-
-          if (!domSummary.headline_metric) {
-            domSummary.headline_metric = {
-              name: metric.name,
-              value: item.value,
-              unit: item.unit,
-              baseline_mean: metric.baseline.mean,
-              delta_from_baseline_pct: deltaPct,
-              quality: item.quality,
-            };
-          } else {
-            domSummary.headline_metric.value = item.value;
-            domSummary.headline_metric.quality = item.quality;
-            domSummary.headline_metric.delta_from_baseline_pct = deltaPct;
-          }
           domSummary.completeness_pct = 100;
           domSummary.last_updated = item.timestamp;
+          domSummary.headline_metric = `${item.value} ${item.unit}`;
 
           if (domSummary.status === 'INSUFFICIENT_DATA') {
             domSummary.status = 'NORMAL';
-            domSummary.status_reason = null;
+            domSummary.status_reason = 'Telemetry updated; biomarker cadence validated';
             domainDetail.status = 'NORMAL';
             domainDetail.status_reason = null;
             domainDetail.cadence_policy.last_sample_elapsed_days = 0.0;
           }
         }
-        updatedMetrics.push(item.metric_id);
+        ingested++;
       }
     }
 
-    if (payload.batch[0]?.provenance === 'MANUAL_ENTRY') {
-      this.dashboard.data_provenance_summary.manual_entry_count += payload.batch.length;
-    } else {
-      this.dashboard.data_provenance_summary.actual_telem_count += payload.batch.length;
-    }
-
     return {
-      success: true,
-      ingested_count: payload.batch.length,
-      updated_metrics: updatedMetrics,
+      ingested_count: ingested,
+      rejected_count: 0,
+      message: `Successfully ingested ${ingested} telemetry measurement(s).`,
     };
   }
 
   public logOperationalRisk(
     astronautId: string,
-    record: Omit<OperationalRiskRecord, 'id' | 'logged_at'>
-  ): OperationalRiskRecord {
-    const newRecord: OperationalRiskRecord = {
-      ...record,
-      id: `risk-${Date.now()}`,
+    record: OperationalRiskCreateRequest
+  ): OperationalRiskResponse {
+    const newRecord: OperationalRiskResponse = {
+      id: `RISK-${Date.now()}`,
       astronaut_id: astronautId,
-      logged_at: new Date().toISOString(),
+      timestamp: record.timestamp || new Date().toISOString(),
+      event_type: record.event_type,
+      severity: record.severity,
+      description: record.description,
+      mitigation_applied: record.mitigation_applied,
+      downlink_priority: record.downlink_priority || 'ROUTINE',
+      risk_type: record.event_type,
+      risk_name: record.description,
+      mission_day: this.dashboard.astronaut.mission_day,
+      notes: record.description,
+      mitigation_status: record.mitigation_applied,
     };
     this.riskRecords.unshift(newRecord);
     this.dashboard.operational_risk_records_count = this.riskRecords.length;
     return JSON.parse(JSON.stringify(newRecord));
   }
 
-  public getOperationalRisks(astronautId: string): OperationalRiskRecord[] {
+  public getOperationalRisks(astronautId: string): OperationalRiskResponse[] {
     return JSON.parse(JSON.stringify(this.riskRecords.filter((r) => r.astronaut_id === astronautId)));
   }
 }
 
-// Global in-memory adapter instance
 const mockAdapter = new StatefulMockAdapter();
 
 /**
  * Unified API Client
- * Seamlessly routes between the stateful in-memory mock adapter and the real live /api/v1 backend.
+ * Seamlessly interfaces with live FastAPI /api/v1 backend or in-memory mock adapter.
  */
 export const apiClient = {
   isMockActive(): boolean {
     return USE_MOCK;
   },
 
-  async getDashboard(astronautId?: string): Promise<DashboardResponse> {
+  async getAstronauts(): Promise<AstronautSummary[]> {
     if (USE_MOCK) {
-      return mockAdapter.getDashboard();
+      return mockAdapter.getAstronauts();
     }
-    const url = new URL(`${API_BASE_URL}/api/v1/dashboard`);
-    if (astronautId) url.searchParams.append('astronaut_id', astronautId);
-    const res = await fetch(url.toString());
-    if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch dashboard`);
+    const res = await fetch(`${API_BASE_URL}/api/v1/astronauts`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch astronauts`);
     return res.json();
   },
 
-  async getDomainDetail(domainId: DomainId, astronautId?: string): Promise<DomainDetailResponse> {
+  async getDashboard(astronautId: string = 'astro-101'): Promise<DashboardResponse> {
     if (USE_MOCK) {
-      return mockAdapter.getDomainDetail(domainId);
+      return mockAdapter.getDashboard(astronautId);
     }
-    const url = new URL(`${API_BASE_URL}/api/v1/domains/${domainId}`);
-    if (astronautId) url.searchParams.append('astronaut_id', astronautId);
-    const res = await fetch(url.toString());
-    if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch domain detail`);
+    const res = await fetch(`${API_BASE_URL}/api/v1/astronauts/${astronautId}/dashboard`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch dashboard for ${astronautId}`);
     return res.json();
   },
 
-  async getScenarios(): Promise<SimulationScenario[]> {
+  async getDomainDetail(
+    astronautId: string = 'astro-101',
+    domainId: DomainId,
+    range: string = '30d'
+  ): Promise<DomainDetailResponse> {
+    if (USE_MOCK) {
+      return mockAdapter.getDomainDetail(astronautId, domainId);
+    }
+    const res = await fetch(
+      `${API_BASE_URL}/api/v1/astronauts/${astronautId}/domains/${domainId}?range=${range}`
+    );
+    if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch domain detail for ${domainId}`);
+    return res.json();
+  },
+
+  async getScenarios(): Promise<SimulationScenarioItem[]> {
     if (USE_MOCK) {
       return mockAdapter.getScenarios();
     }
-    const res = await fetch(`${API_BASE_URL}/api/v1/scenarios`);
+    const res = await fetch(`${API_BASE_URL}/api/v1/simulation/scenarios`);
     if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch scenarios`);
-    return res.json();
+    const data = await res.json();
+    return data.scenarios || data;
   },
 
-  async loadSimulationScenario(scenarioId: string, astronautId?: string): Promise<DashboardResponse> {
+  async loadSimulationScenario(scenarioId: string, astronautId: string = 'astro-101'): Promise<DashboardResponse> {
     if (USE_MOCK) {
-      return mockAdapter.resetToScenario(scenarioId);
+      return mockAdapter.resetToScenario(scenarioId, astronautId);
     }
     const res = await fetch(`${API_BASE_URL}/api/v1/simulation/load`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ scenario_id: scenarioId, astronaut_id: astronautId }),
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to load scenario`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to load scenario ${scenarioId}`);
     return res.json();
   },
 
   async acknowledgeRecommendation(
     recId: string,
-    payload: AcknowledgeRecommendationRequest
-  ): Promise<ClosedLoopRecommendation> {
+    payload: RecommendationAcknowledgeRequest
+  ): Promise<RecommendationAcknowledgeResponse> {
     if (USE_MOCK) {
       return mockAdapter.acknowledgeRecommendation(recId, payload);
     }
@@ -264,27 +306,48 @@ export const apiClient = {
     return res.json();
   },
 
-  async ingestTelemetryBatch(payload: TelemetryBatchRequest): Promise<{
-    success: boolean;
-    ingested_count: number;
-    updated_metrics: string[];
-  }> {
+  async ingestTelemetryBatch(
+    payload: BatchTelemetryIngestRequest | TelemetryBatchRequest
+  ): Promise<BatchTelemetryResponse> {
     if (USE_MOCK) {
       return mockAdapter.ingestTelemetryBatch(payload);
     }
+
+    // Ensure format matches BatchTelemetryIngestRequest { measurements: [...] }
+    let body: BatchTelemetryIngestRequest;
+    if ((payload as BatchTelemetryIngestRequest).measurements) {
+      body = payload as BatchTelemetryIngestRequest;
+    } else {
+      const p = payload as TelemetryBatchRequest;
+      body = {
+        measurements: (p.batch || []).map((b) => ({
+          astronaut_id: p.astronaut_id || 'astro-101',
+          domain_id: b.domain_id,
+          metric_name: b.metric_name || b.metric_id,
+          timestamp: b.timestamp,
+          value: b.value,
+          unit: b.unit,
+          quality: b.quality,
+          provenance: b.provenance,
+          modality: b.modality,
+          note: b.note,
+        })),
+      };
+    }
+
     const res = await fetch(`${API_BASE_URL}/api/v1/telemetry/batch`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to ingest telemetry batch`);
     return res.json();
   },
 
   async logOperationalRisk(
-    astronautId: string,
-    record: Omit<OperationalRiskRecord, 'id' | 'logged_at'>
-  ): Promise<OperationalRiskRecord> {
+    astronautId: string = 'astro-101',
+    record: OperationalRiskCreateRequest
+  ): Promise<OperationalRiskResponse> {
     if (USE_MOCK) {
       return mockAdapter.logOperationalRisk(astronautId, record);
     }
@@ -297,7 +360,7 @@ export const apiClient = {
     return res.json();
   },
 
-  async getOperationalRisks(astronautId: string): Promise<OperationalRiskRecord[]> {
+  async getOperationalRisks(astronautId: string = 'astro-101'): Promise<OperationalRiskResponse[]> {
     if (USE_MOCK) {
       return mockAdapter.getOperationalRisks(astronautId);
     }

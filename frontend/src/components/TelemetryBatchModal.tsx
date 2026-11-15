@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DomainId, Modality, Provenance, DataQuality, TelemetryBatchRequest } from '../types/api';
+import { DomainId, Modality, Provenance, DataQuality, BatchTelemetryIngestRequest } from '../types/api';
 import { PlusCircle, X } from 'lucide-react';
 
 interface TelemetryBatchModalProps {
@@ -9,26 +9,26 @@ interface TelemetryBatchModalProps {
   currentMissionDay: number;
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (req: TelemetryBatchRequest) => Promise<void>;
+  onSubmit: (req: any) => Promise<void>;
 }
 
 export const TelemetryBatchModal: React.FC<TelemetryBatchModalProps> = ({
   astronautId,
   defaultDomainId = 'immune_microbio',
-  defaultMetricId = 'imm_iga',
+  defaultMetricId = 'crp_biomarker_mg_l',
   currentMissionDay,
   isOpen,
   onClose,
   onSubmit,
 }) => {
   const [domainId, setDomainId] = useState<DomainId>(defaultDomainId);
-  const [metricId, setMetricId] = useState<string>(defaultMetricId);
-  const [value, setValue] = useState<string>('185.0');
-  const [unit, setUnit] = useState<string>('ug/mL');
+  const [metricId, setMetricId] = useState<string>(defaultMetricId || 'crp_biomarker_mg_l');
+  const [value, setValue] = useState<string>('0.85');
+  const [unit, setUnit] = useState<string>('mg/L');
   const [modality, setModality] = useState<Modality>('LAB_ASSAY');
   const [provenance, setProvenance] = useState<Provenance>('MANUAL_ENTRY');
   const [quality, setQuality] = useState<DataQuality>('VALID');
-  const [note, setNote] = useState<string>('Crew-executed rapid biomarker cassette run.');
+  const [note, setNote] = useState<string>('Crew-executed rapid saliva biomarker cassette run.');
   const [submitting, setSubmitting] = useState<boolean>(false);
 
   if (!isOpen) return null;
@@ -36,23 +36,29 @@ export const TelemetryBatchModal: React.FC<TelemetryBatchModalProps> = ({
   const handleDomainChange = (newDom: DomainId) => {
     setDomainId(newDom);
     if (newDom === 'immune_microbio') {
-      setMetricId('imm_iga');
-      setValue('185.0');
-      setUnit('ug/mL');
+      setMetricId('crp_biomarker_mg_l');
+      setValue('0.85');
+      setUnit('mg/L');
       setModality('LAB_ASSAY');
       setNote('Bio-assay cartridge processed in Node 2 centrifuge.');
     } else if (newDom === 'cardiovascular') {
-      setMetricId('cv_rhr');
+      setMetricId('resting_hr_bpm');
       setValue('62.0');
       setUnit('bpm');
       setModality('OBJECTIVE_SENSOR');
       setNote('Resting rate verified post-rest.');
     } else if (newDom === 'sleep_circadian') {
-      setMetricId('slp_duration');
-      setValue('7.0');
-      setUnit('hrs');
+      setMetricId('sleep_duration_hours');
+      setValue('7.5');
+      setUnit('hours');
       setModality('SUBJECTIVE_REPORT');
       setNote('Morning crew subjective sleep report.');
+    } else if (newDom === 'environment_eclss') {
+      setMetricId('co2_partial_pressure_mmhg');
+      setValue('2.2');
+      setUnit('mmHg');
+      setModality('ENVIRONMENTAL_SENSOR');
+      setNote('Handheld air constituent sample verified.');
     } else {
       setMetricId(`${newDom}_metric`);
       setValue('100.0');
@@ -65,20 +71,20 @@ export const TelemetryBatchModal: React.FC<TelemetryBatchModalProps> = ({
     setSubmitting(true);
     try {
       const numVal = parseFloat(value);
-      const req: TelemetryBatchRequest = {
-        astronaut_id: astronautId,
-        batch: [
+      const req: BatchTelemetryIngestRequest = {
+        measurements: [
           {
+            astronaut_id: astronautId,
             domain_id: domainId,
-            metric_id: metricId,
+            metric_name: metricId,
+            timestamp: new Date().toISOString(),
             value: isNaN(numVal) ? 0 : numVal,
             unit,
-            timestamp: new Date().toISOString(),
-            mission_day: currentMissionDay,
             provenance,
             modality,
             quality,
             note: note.trim() || undefined,
+            mission_day: currentMissionDay,
           },
         ],
       };
@@ -141,9 +147,9 @@ export const TelemetryBatchModal: React.FC<TelemetryBatchModalProps> = ({
                   fontFamily: "'JetBrains Mono', monospace",
                 }}
               >
+                <option value="immune_microbio">Immune & Microbiome</option>
                 <option value="cardiovascular">Cardiovascular</option>
                 <option value="sleep_circadian">Sleep & Circadian</option>
-                <option value="immune_microbio">Immune & Microbiome</option>
                 <option value="behavioral_psych">Behavioral & Cognition</option>
                 <option value="musculoskeletal">Musculoskeletal</option>
                 <option value="radiation">Radiation</option>
@@ -155,7 +161,7 @@ export const TelemetryBatchModal: React.FC<TelemetryBatchModalProps> = ({
 
             <div>
               <label style={{ display: 'block', fontSize: '11px', color: '#94A3B8', marginBottom: '4px', textTransform: 'uppercase' }}>
-                Metric Identifier:
+                Metric Name:
               </label>
               <input
                 type="text"

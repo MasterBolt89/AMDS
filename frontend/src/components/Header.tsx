@@ -1,12 +1,15 @@
 import React from 'react';
-import { DashboardResponse, SimulationScenario } from '../types/api';
+import { DashboardResponse, SimulationScenarioItem, AstronautSummary } from '../types/api';
 import { ProvenanceBadge } from './StatusBadge';
-import { Radio, Clock, User, Shield, AlertTriangle, PlusCircle, Activity } from 'lucide-react';
+import { Radio, Clock, User, AlertTriangle, PlusCircle, Activity } from 'lucide-react';
 
 interface HeaderProps {
   dashboard: DashboardResponse;
-  scenarios: SimulationScenario[];
+  scenarios: SimulationScenarioItem[];
   activeScenarioId: string;
+  astronauts: AstronautSummary[];
+  activeAstronautId: string;
+  onSelectAstronaut: (astronautId: string) => void;
   onSelectScenario: (scenarioId: string) => void;
   onOpenRisks: () => void;
   onOpenTelemetryModal: () => void;
@@ -16,6 +19,9 @@ export const Header: React.FC<HeaderProps> = ({
   dashboard,
   scenarios,
   activeScenarioId,
+  astronauts,
+  activeAstronautId,
+  onSelectAstronaut,
   onSelectScenario,
   onOpenRisks,
   onOpenTelemetryModal,
@@ -23,6 +29,10 @@ export const Header: React.FC<HeaderProps> = ({
   const { astronaut, mission_context, operational_risk_records_count } = dashboard;
   const isSurgeonLive = mission_context.live_flight_surgeon_available;
   const latencyMin = (mission_context.one_way_light_time_sec / 60).toFixed(1);
+  const provenance =
+    dashboard.data_provenance_summary.active_provenance ||
+    mission_context.active_provenance ||
+    'SIMULATED';
 
   return (
     <header
@@ -71,8 +81,8 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Action Controls & Scenario Switcher */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {/* Action Controls, Astronaut Profile & Scenario Switcher */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px' }}>
           <button
             className="aero-btn"
             onClick={onOpenTelemetryModal}
@@ -109,6 +119,37 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
           </button>
 
+          {/* Astronaut Selector (if multiple) */}
+          {astronauts.length > 1 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '11px', color: '#64748B', textTransform: 'uppercase', fontWeight: 600 }}>
+                Crew:
+              </span>
+              <select
+                value={activeAstronautId}
+                onChange={(e) => onSelectAstronaut(e.target.value)}
+                style={{
+                  backgroundColor: '#111827',
+                  color: '#38BDF8',
+                  border: '1px solid #374151',
+                  borderRadius: '4px',
+                  padding: '5px 10px',
+                  fontSize: '12px',
+                  fontFamily: "'JetBrains Mono', monospace",
+                  cursor: 'pointer',
+                  outline: 'none',
+                }}
+              >
+                {astronauts.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.callsign} ({a.id})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Scenario Switcher (All 4 Scenarios) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span style={{ fontSize: '11px', color: '#64748B', textTransform: 'uppercase', fontWeight: 600 }}>
               Scenario:
@@ -126,13 +167,17 @@ export const Header: React.FC<HeaderProps> = ({
                 fontFamily: "'JetBrains Mono', monospace",
                 cursor: 'pointer',
                 outline: 'none',
+                maxWidth: '300px',
               }}
             >
-              {scenarios.map((sc) => (
-                <option key={sc.id} value={sc.id}>
-                  {sc.name}
-                </option>
-              ))}
+              {scenarios.map((sc) => {
+                const sId = sc.scenario_id || (sc as any).id;
+                return (
+                  <option key={sId} value={sId}>
+                    {sc.name}
+                  </option>
+                );
+              })}
             </select>
           </div>
         </div>
@@ -155,20 +200,20 @@ export const Header: React.FC<HeaderProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <User size={15} color="#38BDF8" />
           <div>
-            <div style={{ fontSize: '10px', color: '#64748B', textTransform: 'uppercase' }}>Astronaut</div>
+            <div style={{ fontSize: '10px', color: '#64748B', textTransform: 'uppercase' }}>Crew Subject</div>
             <div style={{ fontSize: '13px', fontWeight: 700, color: '#F1F5F9', fontFamily: "'JetBrains Mono', monospace" }}>
-              {astronaut.callsign} <span style={{ fontSize: '11px', fontWeight: 400, color: '#94A3B8' }}>({astronaut.name})</span>
+              {astronaut.callsign} <span style={{ fontSize: '11px', fontWeight: 400, color: '#94A3B8' }}>({astronaut.id})</span>
             </div>
           </div>
         </div>
 
-        {/* Mission Phase & Day */}
+        {/* Mission Profile & Day */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Activity size={15} color="#A78BFA" />
           <div>
             <div style={{ fontSize: '10px', color: '#64748B', textTransform: 'uppercase' }}>Mission Profile</div>
             <div style={{ fontSize: '12px', fontWeight: 600, color: '#E2E8F0', fontFamily: "'JetBrains Mono', monospace" }}>
-              {mission_context.mission_phase} • DAY {mission_context.mission_day}
+              {mission_context.mission_profile} • DAY {astronaut.mission_day || mission_context.mission_day || 42}
             </div>
           </div>
         </div>
@@ -204,7 +249,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Data Provenance Badge */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-          <ProvenanceBadge provenance={mission_context.active_provenance} />
+          <ProvenanceBadge provenance={provenance} />
         </div>
       </div>
     </header>
