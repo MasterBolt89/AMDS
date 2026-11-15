@@ -1,0 +1,28 @@
+[project]
+name = "astronaut-health-backend"
+version = "0.1.0"
+description = "NASA Space Apps Challenge 2026 - Astronaut Health Monitoring & Deterministic Intelligence Backend"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "aiosqlite>=0.22.1",
+    "fastapi>=0.163.0",
+    "greenlet>=3.5.6",
+    "pydantic>=2.14.3",
+    "sqlalchemy>=2.1.8",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.2.0",
+    "pytest-asyncio>=1.5.0",
+]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+pythonpath = ["."]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"

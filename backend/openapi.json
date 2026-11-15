@@ -1,0 +1,1614 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "NASA Astronaut Health Monitoring & Intelligence Engine",
+    "description": "Deterministic Health Intelligence and Multimodal Telemetry System for Long-Duration Space Missions.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/astronauts": {
+      "get": {
+        "tags": [
+          "Astronauts & Dashboard"
+        ],
+        "summary": "List Astronauts",
+        "description": "Lists all active astronauts in the system.",
+        "operationId": "list_astronauts_api_v1_astronauts_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AstronautSummary"
+                  },
+                  "type": "array",
+                  "title": "Response List Astronauts Api V1 Astronauts Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/astronauts/{astronaut_id}/dashboard": {
+      "get": {
+        "tags": [
+          "Astronauts & Dashboard"
+        ],
+        "summary": "Get Astronaut Dashboard",
+        "description": "Master Dashboard Overview: Returns the complete 9-domain health status,\n\ndeterministic baseline-drift findings, actionable recommendations, and operational risk metrics.",
+        "operationId": "get_astronaut_dashboard_api_v1_astronauts__astronaut_id__dashboard_get",
+        "parameters": [
+          {
+            "name": "astronaut_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Astronaut Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/astronauts/{astronaut_id}/domains/{domain_id}": {
+      "get": {
+        "tags": [
+          "Domains & Time-Series"
+        ],
+        "summary": "Get Domain Detail",
+        "description": "Returns domain status, scope notice, cadence policy, and detailed metric baselines and time-series points.",
+        "operationId": "get_domain_detail_api_v1_astronauts__astronaut_id__domains__domain_id__get",
+        "parameters": [
+          {
+            "name": "astronaut_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Astronaut Id"
+            }
+          },
+          {
+            "name": "domain_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Domain Id"
+            }
+          },
+          {
+            "name": "range",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(7d|30d|mission)$",
+              "default": "30d",
+              "title": "Range"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/telemetry/batch": {
+      "post": {
+        "tags": [
+          "Telemetry Ingestion"
+        ],
+        "summary": "Ingest Telemetry Batch",
+        "description": "Ingests a batch of telemetry measurements with strict provenance, modality, and quality validation.\n\nAutomatically triggers closed-loop reassessment evaluation if an acknowledged intervention's\nreassess_after window has elapsed.",
+        "operationId": "ingest_telemetry_batch_api_v1_telemetry_batch_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchTelemetryIngestRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchTelemetryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/astronauts/{astronaut_id}/assessments/history": {
+      "get": {
+        "tags": [
+          "Assessment History"
+        ],
+        "summary": "Get Assessment History",
+        "description": "Returns chronological log of domain assessment evaluations and status transitions.",
+        "operationId": "get_assessment_history_api_v1_astronauts__astronaut_id__assessments_history_get",
+        "parameters": [
+          {
+            "name": "astronaut_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Astronaut Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentHistoryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/recommendations/{rec_id}/acknowledge": {
+      "post": {
+        "tags": [
+          "Recommendations & Reassessment"
+        ],
+        "summary": "Acknowledge Recommendation",
+        "description": "Acknowledges an active health recommendation, recording the astronaut's intervention (t0)\n\nand initiating the deterministic reassessment evaluation window.",
+        "operationId": "acknowledge_recommendation_api_v1_recommendations__rec_id__acknowledge_post",
+        "parameters": [
+          {
+            "name": "rec_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Rec Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecommendationAcknowledgeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationAcknowledgeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/astronauts/{astronaut_id}/operational-risks": {
+      "get": {
+        "tags": [
+          "Operational Risks"
+        ],
+        "summary": "List Operational Risks",
+        "description": "Returns all event-based operational incidents (EVA issues, hypoxia, DCS concerns, dynamic load events).",
+        "operationId": "list_operational_risks_api_v1_astronauts__astronaut_id__operational_risks_get",
+        "parameters": [
+          {
+            "name": "astronaut_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Astronaut Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OperationalRiskResponse"
+                  },
+                  "title": "Response List Operational Risks Api V1 Astronauts  Astronaut Id  Operational Risks Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Operational Risks"
+        ],
+        "summary": "Create Operational Risk",
+        "description": "Logs a discrete event-based operational risk incident.",
+        "operationId": "create_operational_risk_api_v1_astronauts__astronaut_id__operational_risks_post",
+        "parameters": [
+          {
+            "name": "astronaut_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Astronaut Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OperationalRiskCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationalRiskResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/simulation/scenarios": {
+      "get": {
+        "tags": [
+          "Simulation & Scenarios"
+        ],
+        "summary": "List Simulation Scenarios",
+        "description": "Lists the 4 available deterministic judge demonstration scenarios.",
+        "operationId": "list_simulation_scenarios_api_v1_simulation_scenarios_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimulationScenarioListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/simulation/load": {
+      "post": {
+        "tags": [
+          "Simulation & Scenarios"
+        ],
+        "summary": "Load Simulation Scenario",
+        "description": "Loads a deterministic SIMULATED scenario, resets astronaut baseline telemetry,\n\nexecutes the deterministic intelligence engine, and returns the refreshed DashboardResponse.",
+        "operationId": "load_simulation_scenario_api_v1_simulation_load_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimulationLoadRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Healthcheck",
+        "description": "Basic healthcheck endpoint.",
+        "operationId": "healthcheck_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Healthcheck Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AssessmentHistoryItem": {
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "domain_id": {
+            "$ref": "#/components/schemas/DomainId"
+          },
+          "previous_status": {
+            "$ref": "#/components/schemas/AssessmentStatus"
+          },
+          "new_status": {
+            "$ref": "#/components/schemas/AssessmentStatus"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "timestamp",
+          "domain_id",
+          "previous_status",
+          "new_status",
+          "reason"
+        ],
+        "title": "AssessmentHistoryItem"
+      },
+      "AssessmentHistoryResponse": {
+        "properties": {
+          "astronaut_id": {
+            "type": "string",
+            "title": "Astronaut Id"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/AssessmentHistoryItem"
+            },
+            "type": "array",
+            "title": "History"
+          }
+        },
+        "type": "object",
+        "required": [
+          "astronaut_id",
+          "history"
+        ],
+        "title": "AssessmentHistoryResponse"
+      },
+      "AssessmentStatus": {
+        "type": "string",
+        "enum": [
+          "NORMAL",
+          "ATTENTION",
+          "CRITICAL",
+          "INSUFFICIENT_DATA"
+        ],
+        "title": "AssessmentStatus"
+      },
+      "AstronautSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "callsign": {
+            "type": "string",
+            "title": "Callsign"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "mission_day": {
+            "type": "integer",
+            "title": "Mission Day"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "callsign",
+          "role",
+          "mission_day"
+        ],
+        "title": "AstronautSummary"
+      },
+      "BatchTelemetryIngestRequest": {
+        "properties": {
+          "measurements": {
+            "items": {
+              "$ref": "#/components/schemas/TelemetryMeasurementItem"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Measurements"
+          }
+        },
+        "type": "object",
+        "required": [
+          "measurements"
+        ],
+        "title": "BatchTelemetryIngestRequest"
+      },
+      "BatchTelemetryResponse": {
+        "properties": {
+          "ingested_count": {
+            "type": "integer",
+            "title": "Ingested Count"
+          },
+          "rejected_count": {
+            "type": "integer",
+            "title": "Rejected Count"
+          },
+          "reassessment_evaluations": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Reassessment Evaluations"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ingested_count",
+          "rejected_count",
+          "message"
+        ],
+        "title": "BatchTelemetryResponse"
+      },
+      "CadencePolicy": {
+        "properties": {
+          "expected_interval_hours": {
+            "type": "number",
+            "title": "Expected Interval Hours"
+          },
+          "stale_after_hours": {
+            "type": "number",
+            "title": "Stale After Hours"
+          },
+          "minimum_valid_samples_for_baseline": {
+            "type": "integer",
+            "title": "Minimum Valid Samples For Baseline"
+          }
+        },
+        "type": "object",
+        "required": [
+          "expected_interval_hours",
+          "stale_after_hours",
+          "minimum_valid_samples_for_baseline"
+        ],
+        "title": "CadencePolicy"
+      },
+      "DashboardResponse": {
+        "properties": {
+          "astronaut": {
+            "$ref": "#/components/schemas/AstronautSummary"
+          },
+          "mission_context": {
+            "$ref": "#/components/schemas/MissionContext"
+          },
+          "data_provenance_summary": {
+            "$ref": "#/components/schemas/DataProvenanceSummary"
+          },
+          "domains": {
+            "items": {
+              "$ref": "#/components/schemas/DomainSummary"
+            },
+            "type": "array",
+            "title": "Domains"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/Finding"
+            },
+            "type": "array",
+            "title": "Findings"
+          },
+          "recommendations": {
+            "items": {
+              "$ref": "#/components/schemas/RecommendationItem"
+            },
+            "type": "array",
+            "title": "Recommendations"
+          },
+          "operational_risk_records_count": {
+            "type": "integer",
+            "title": "Operational Risk Records Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "astronaut",
+          "mission_context",
+          "data_provenance_summary",
+          "domains",
+          "findings",
+          "recommendations",
+          "operational_risk_records_count"
+        ],
+        "title": "DashboardResponse"
+      },
+      "DataProvenanceSummary": {
+        "properties": {
+          "active_provenance": {
+            "$ref": "#/components/schemas/Provenance"
+          },
+          "scenario_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Id"
+          },
+          "overall_completeness_pct": {
+            "type": "number",
+            "title": "Overall Completeness Pct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "active_provenance",
+          "overall_completeness_pct"
+        ],
+        "title": "DataProvenanceSummary"
+      },
+      "DataQuality": {
+        "type": "string",
+        "enum": [
+          "VALID",
+          "SUSPECT",
+          "MISSING"
+        ],
+        "title": "DataQuality"
+      },
+      "DomainCategory": {
+        "type": "string",
+        "enum": [
+          "PERSONAL_HEALTH",
+          "ENVIRONMENTAL_ECLSS"
+        ],
+        "title": "DomainCategory"
+      },
+      "DomainDetailResponse": {
+        "properties": {
+          "domain_id": {
+            "$ref": "#/components/schemas/DomainId"
+          },
+          "domain_category": {
+            "$ref": "#/components/schemas/DomainCategory"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AssessmentStatus"
+          },
+          "measurement_scope_notice": {
+            "type": "string",
+            "title": "Measurement Scope Notice"
+          },
+          "cadence_policy": {
+            "$ref": "#/components/schemas/CadencePolicy"
+          },
+          "metrics": {
+            "items": {
+              "$ref": "#/components/schemas/DomainMetricDetail"
+            },
+            "type": "array",
+            "title": "Metrics"
+          }
+        },
+        "type": "object",
+        "required": [
+          "domain_id",
+          "domain_category",
+          "display_name",
+          "status",
+          "measurement_scope_notice",
+          "cadence_policy",
+          "metrics"
+        ],
+        "title": "DomainDetailResponse"
+      },
+      "DomainId": {
+        "type": "string",
+        "enum": [
+          "cardiovascular",
+          "sleep_circadian",
+          "behavioral_psych",
+          "musculoskeletal",
+          "immune_microbio",
+          "radiation",
+          "environment_eclss",
+          "sensorimotor_neuro",
+          "nutrition"
+        ],
+        "title": "DomainId"
+      },
+      "DomainMetricBaseline": {
+        "properties": {
+          "window_label": {
+            "type": "string",
+            "title": "Window Label"
+          },
+          "is_validated_standard": {
+            "type": "boolean",
+            "title": "Is Validated Standard"
+          },
+          "mean": {
+            "type": "number",
+            "title": "Mean"
+          },
+          "std_dev": {
+            "type": "number",
+            "title": "Std Dev"
+          },
+          "sample_count": {
+            "type": "integer",
+            "title": "Sample Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "window_label",
+          "is_validated_standard",
+          "mean",
+          "std_dev",
+          "sample_count"
+        ],
+        "title": "DomainMetricBaseline"
+      },
+      "DomainMetricDetail": {
+        "properties": {
+          "metric_name": {
+            "type": "string",
+            "title": "Metric Name"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "baseline": {
+            "$ref": "#/components/schemas/DomainMetricBaseline"
+          },
+          "series": {
+            "items": {
+              "$ref": "#/components/schemas/MetricSeriesPoint"
+            },
+            "type": "array",
+            "title": "Series"
+          }
+        },
+        "type": "object",
+        "required": [
+          "metric_name",
+          "unit",
+          "baseline",
+          "series"
+        ],
+        "title": "DomainMetricDetail"
+      },
+      "DomainSummary": {
+        "properties": {
+          "domain_id": {
+            "$ref": "#/components/schemas/DomainId"
+          },
+          "domain_category": {
+            "$ref": "#/components/schemas/DomainCategory"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "measurement_scope_notice": {
+            "type": "string",
+            "title": "Measurement Scope Notice"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AssessmentStatus"
+          },
+          "completeness_pct": {
+            "type": "number",
+            "title": "Completeness Pct"
+          },
+          "last_updated": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Updated"
+          },
+          "headline_metric": {
+            "type": "string",
+            "title": "Headline Metric"
+          },
+          "status_reason": {
+            "type": "string",
+            "title": "Status Reason"
+          },
+          "active_finding_count": {
+            "type": "integer",
+            "title": "Active Finding Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "domain_id",
+          "domain_category",
+          "display_name",
+          "measurement_scope_notice",
+          "status",
+          "completeness_pct",
+          "headline_metric",
+          "status_reason",
+          "active_finding_count"
+        ],
+        "title": "DomainSummary"
+      },
+      "EvidenceType": {
+        "type": "string",
+        "enum": [
+          "VALIDATED_STANDARD",
+          "STATISTICAL_BASELINE_DRIFT",
+          "EXPERIMENTAL_HEURISTIC"
+        ],
+        "title": "EvidenceType"
+      },
+      "Finding": {
+        "properties": {
+          "finding_id": {
+            "type": "string",
+            "title": "Finding Id"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity"
+          },
+          "is_cross_domain": {
+            "type": "boolean",
+            "title": "Is Cross Domain"
+          },
+          "involved_domains": {
+            "items": {
+              "$ref": "#/components/schemas/DomainId"
+            },
+            "type": "array",
+            "title": "Involved Domains"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "what_changed": {
+            "type": "string",
+            "title": "What Changed"
+          },
+          "why_it_matters": {
+            "type": "string",
+            "title": "Why It Matters"
+          },
+          "evidence": {
+            "$ref": "#/components/schemas/FindingEvidence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "finding_id",
+          "severity",
+          "is_cross_domain",
+          "involved_domains",
+          "title",
+          "what_changed",
+          "why_it_matters",
+          "evidence"
+        ],
+        "title": "Finding"
+      },
+      "FindingEvidence": {
+        "properties": {
+          "evidence_type": {
+            "$ref": "#/components/schemas/EvidenceType"
+          },
+          "is_validated_clinical_threshold": {
+            "type": "boolean",
+            "title": "Is Validated Clinical Threshold"
+          },
+          "supporting_metrics": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Supporting Metrics"
+          },
+          "reference_source": {
+            "type": "string",
+            "title": "Reference Source"
+          }
+        },
+        "type": "object",
+        "required": [
+          "evidence_type",
+          "is_validated_clinical_threshold",
+          "supporting_metrics",
+          "reference_source"
+        ],
+        "title": "FindingEvidence"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "MetricSeriesPoint": {
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "quality": {
+            "$ref": "#/components/schemas/DataQuality"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/Provenance"
+          },
+          "sensor_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sensor Id"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "timestamp",
+          "value",
+          "quality",
+          "provenance"
+        ],
+        "title": "MetricSeriesPoint"
+      },
+      "MissionContext": {
+        "properties": {
+          "mission_profile": {
+            "$ref": "#/components/schemas/MissionProfile"
+          },
+          "one_way_light_time_sec": {
+            "type": "integer",
+            "title": "One Way Light Time Sec"
+          },
+          "live_flight_surgeon_available": {
+            "type": "boolean",
+            "title": "Live Flight Surgeon Available"
+          },
+          "support_mode": {
+            "type": "string",
+            "title": "Support Mode"
+          },
+          "available_onboard_equipment": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Available Onboard Equipment"
+          }
+        },
+        "type": "object",
+        "required": [
+          "mission_profile",
+          "one_way_light_time_sec",
+          "live_flight_surgeon_available",
+          "support_mode",
+          "available_onboard_equipment"
+        ],
+        "title": "MissionContext"
+      },
+      "MissionProfile": {
+        "type": "string",
+        "enum": [
+          "ISS_LEO",
+          "MARS_TRANSIT"
+        ],
+        "title": "MissionProfile"
+      },
+      "Modality": {
+        "type": "string",
+        "enum": [
+          "OBJECTIVE_SENSOR",
+          "LAB_ASSAY",
+          "SUBJECTIVE_REPORT",
+          "ENVIRONMENTAL_SENSOR"
+        ],
+        "title": "Modality"
+      },
+      "OperationalRiskCreateRequest": {
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "event_type": {
+            "$ref": "#/components/schemas/OperationalRiskEventType"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "mitigation_applied": {
+            "type": "string",
+            "title": "Mitigation Applied"
+          },
+          "downlink_priority": {
+            "type": "string",
+            "title": "Downlink Priority",
+            "default": "ROUTINE"
+          }
+        },
+        "type": "object",
+        "required": [
+          "timestamp",
+          "event_type",
+          "severity",
+          "description",
+          "mitigation_applied"
+        ],
+        "title": "OperationalRiskCreateRequest"
+      },
+      "OperationalRiskEventType": {
+        "type": "string",
+        "enum": [
+          "HYPOXIA_EVENT",
+          "DCS_CONCERN",
+          "EVA_INJURY_PERFORMANCE",
+          "DYNAMIC_LOAD_EVENT"
+        ],
+        "title": "OperationalRiskEventType"
+      },
+      "OperationalRiskResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "astronaut_id": {
+            "type": "string",
+            "title": "Astronaut Id"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "event_type": {
+            "$ref": "#/components/schemas/OperationalRiskEventType"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "mitigation_applied": {
+            "type": "string",
+            "title": "Mitigation Applied"
+          },
+          "downlink_priority": {
+            "type": "string",
+            "title": "Downlink Priority"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "astronaut_id",
+          "timestamp",
+          "event_type",
+          "severity",
+          "description",
+          "mitigation_applied",
+          "downlink_priority"
+        ],
+        "title": "OperationalRiskResponse"
+      },
+      "Provenance": {
+        "type": "string",
+        "enum": [
+          "ACTUAL_TELEM",
+          "MANUAL_ENTRY",
+          "SIMULATED"
+        ],
+        "title": "Provenance"
+      },
+      "ReassessmentOutcome": {
+        "type": "string",
+        "enum": [
+          "PENDING",
+          "IMPROVED",
+          "UNCHANGED",
+          "WORSENED",
+          "INSUFFICIENT_DATA"
+        ],
+        "title": "ReassessmentOutcome"
+      },
+      "ReassessmentTracker": {
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/RecommendationStatus"
+          },
+          "acknowledged_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acknowledged At"
+          },
+          "action_taken_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action Taken Note"
+          },
+          "reassess_after": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reassess After"
+          },
+          "target_metric": {
+            "type": "string",
+            "title": "Target Metric"
+          },
+          "baseline_at_trigger": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baseline At Trigger"
+          },
+          "latest_followup_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Followup Value"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/ReassessmentOutcome"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "target_metric",
+          "outcome"
+        ],
+        "title": "ReassessmentTracker"
+      },
+      "RecommendationAcknowledgeRequest": {
+        "properties": {
+          "astronaut_id": {
+            "type": "string",
+            "title": "Astronaut Id"
+          },
+          "action_taken_note": {
+            "type": "string",
+            "title": "Action Taken Note"
+          },
+          "acknowledged_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Acknowledged At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "astronaut_id",
+          "action_taken_note",
+          "acknowledged_at"
+        ],
+        "title": "RecommendationAcknowledgeRequest"
+      },
+      "RecommendationAcknowledgeResponse": {
+        "properties": {
+          "recommendation_id": {
+            "type": "string",
+            "title": "Recommendation Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RecommendationStatus"
+          },
+          "acknowledged_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Acknowledged At"
+          },
+          "reassess_after": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Reassess After"
+          },
+          "baseline_at_trigger": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baseline At Trigger"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "recommendation_id",
+          "status",
+          "acknowledged_at",
+          "reassess_after",
+          "message"
+        ],
+        "title": "RecommendationAcknowledgeResponse"
+      },
+      "RecommendationItem": {
+        "properties": {
+          "recommendation_id": {
+            "type": "string",
+            "title": "Recommendation Id"
+          },
+          "finding_id": {
+            "type": "string",
+            "title": "Finding Id"
+          },
+          "action_summary": {
+            "type": "string",
+            "title": "Action Summary"
+          },
+          "consultation_guidance": {
+            "type": "string",
+            "title": "Consultation Guidance"
+          },
+          "escalate_when": {
+            "type": "string",
+            "title": "Escalate When"
+          },
+          "reassessment": {
+            "$ref": "#/components/schemas/ReassessmentTracker"
+          }
+        },
+        "type": "object",
+        "required": [
+          "recommendation_id",
+          "finding_id",
+          "action_summary",
+          "consultation_guidance",
+          "escalate_when",
+          "reassessment"
+        ],
+        "title": "RecommendationItem"
+      },
+      "RecommendationStatus": {
+        "type": "string",
+        "enum": [
+          "ACTIVE",
+          "ACKNOWLEDGED",
+          "RESOLVED"
+        ],
+        "title": "RecommendationStatus"
+      },
+      "SimulationLoadRequest": {
+        "properties": {
+          "scenario_id": {
+            "type": "string",
+            "title": "Scenario Id"
+          },
+          "astronaut_id": {
+            "type": "string",
+            "title": "Astronaut Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenario_id",
+          "astronaut_id"
+        ],
+        "title": "SimulationLoadRequest"
+      },
+      "SimulationScenarioItem": {
+        "properties": {
+          "scenario_id": {
+            "type": "string",
+            "title": "Scenario Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "mission_profile": {
+            "$ref": "#/components/schemas/MissionProfile"
+          },
+          "hazards_featured": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Hazards Featured"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenario_id",
+          "name",
+          "description",
+          "mission_profile",
+          "hazards_featured"
+        ],
+        "title": "SimulationScenarioItem"
+      },
+      "SimulationScenarioListResponse": {
+        "properties": {
+          "scenarios": {
+            "items": {
+              "$ref": "#/components/schemas/SimulationScenarioItem"
+            },
+            "type": "array",
+            "title": "Scenarios"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenarios"
+        ],
+        "title": "SimulationScenarioListResponse"
+      },
+      "TelemetryMeasurementItem": {
+        "properties": {
+          "astronaut_id": {
+            "type": "string",
+            "title": "Astronaut Id"
+          },
+          "domain_id": {
+            "$ref": "#/components/schemas/DomainId"
+          },
+          "metric_name": {
+            "type": "string",
+            "title": "Metric Name"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "quality": {
+            "$ref": "#/components/schemas/DataQuality",
+            "default": "VALID"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/Provenance",
+            "default": "ACTUAL_TELEM"
+          },
+          "modality": {
+            "$ref": "#/components/schemas/Modality",
+            "default": "OBJECTIVE_SENSOR"
+          },
+          "sensor_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sensor Id"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "astronaut_id",
+          "domain_id",
+          "metric_name",
+          "timestamp",
+          "unit"
+        ],
+        "title": "TelemetryMeasurementItem"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
