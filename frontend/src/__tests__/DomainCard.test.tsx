@@ -232,5 +232,50 @@ describe('DomainCard Component & Headline Metric Parser', () => {
       expect(screen.getByTestId('headline-delta')).toHaveTextContent('+0.5% vs baseline');
       expect(screen.getByTestId('headline-baseline')).toHaveTextContent('Baseline: 14.93 /100');
     });
+
+    it('preserves exact baseline mean and delta when selected vs unselected with zero text shift', () => {
+      const domain: DomainSummary = {
+        domain_id: 'behavioral_psych',
+        domain_category: 'PERSONAL_HEALTH',
+        display_name: 'Behavioral Health & Psychology',
+        measurement_scope_notice: 'Cognitive fatigue surveillance.',
+        status: 'NORMAL',
+        completeness_pct: 100,
+        headline_metric: 'Cognitive Fatigue: 15.0 /100 (Baseline: 14.93 /100, +0.5%)',
+        status_reason: 'Alertness within nominal range',
+      };
+
+      const mockDetail: any = {
+        domain_id: 'behavioral_psych',
+        metrics: [
+          {
+            metric_name: 'cognitive_fatigue_score',
+            unit: '/100',
+            baseline: { mean: 22.4, std_dev: 1.0 },
+            series: [{ value: 30.0, quality: 'VALID' }],
+          },
+        ],
+      };
+
+      // Unselected
+      const { unmount } = render(<DomainCard domain={domain} isSelected={false} onSelect={onSelectMock} detail={null} />);
+      const unselectedDelta = screen.getByTestId('headline-delta').textContent;
+      const unselectedBaseline = screen.getByTestId('headline-baseline').textContent;
+      const unselectedValue = screen.getByTestId('headline-value').textContent;
+      unmount();
+
+      // Selected with detail present (detail must NOT override headline_metric single source of truth)
+      render(<DomainCard domain={domain} isSelected={true} onSelect={onSelectMock} detail={mockDetail} />);
+      const selectedDelta = screen.getByTestId('headline-delta').textContent;
+      const selectedBaseline = screen.getByTestId('headline-baseline').textContent;
+      const selectedValue = screen.getByTestId('headline-value').textContent;
+
+      expect(selectedDelta).toBe(unselectedDelta);
+      expect(selectedBaseline).toBe(unselectedBaseline);
+      expect(selectedValue).toBe(unselectedValue);
+      expect(selectedDelta).toBe('+0.5% vs baseline');
+      expect(selectedBaseline).toBe('Baseline: 14.93 /100');
+      expect(selectedValue).toBe('15');
+    });
   });
 });

@@ -63,7 +63,9 @@ export interface ParsedHeadlineMetric {
   label: string;
   metric_key?: string;
   delta_from_baseline_pct: number | null;
+  delta_from_baseline_pct_str?: string;
   baseline_mean: number | null;
+  baseline_mean_str?: string;
   quality?: DataQuality | string;
 }
 
@@ -160,7 +162,12 @@ export function parseHeadlineMetric(
       metric_key: metricKey,
       delta_from_baseline_pct:
         raw.delta_from_baseline_pct !== undefined ? raw.delta_from_baseline_pct : null,
+      delta_from_baseline_pct_str:
+        raw.delta_from_baseline_pct !== undefined
+          ? `${raw.delta_from_baseline_pct >= 0 ? '+' : ''}${raw.delta_from_baseline_pct}`
+          : undefined,
       baseline_mean: raw.baseline_mean !== undefined ? raw.baseline_mean : null,
+      baseline_mean_str: raw.baseline_mean !== undefined ? String(raw.baseline_mean) : undefined,
       quality: raw.quality,
     };
   } else if (typeof domain.headline_metric === 'string') {
@@ -206,7 +213,9 @@ export function parseHeadlineMetric(
         label: meta.label,
         metric_key: text,
         delta_from_baseline_pct: delta,
+        delta_from_baseline_pct_str: delta !== null ? `${delta >= 0 ? '+' : ''}${delta.toFixed(1)}` : undefined,
         baseline_mean: baseline,
+        baseline_mean_str: baseline !== null ? String(baseline) : undefined,
       };
     } else {
       const formattedMatch = text.match(
@@ -219,8 +228,10 @@ export function parseHeadlineMetric(
         let unit = formattedMatch[3]?.trim() || '';
         if (unit === '/') unit = '/100';
         if (unit === 'score_1_10') unit = 'score';
-        const baseline = formattedMatch[4] ? parseFloat(formattedMatch[4]) : null;
-        const delta = formattedMatch[5] ? parseFloat(formattedMatch[5]) : null;
+        const baselineStr = formattedMatch[4]?.trim();
+        const baseline = baselineStr ? parseFloat(baselineStr) : null;
+        const deltaStr = formattedMatch[5]?.trim();
+        const delta = deltaStr ? parseFloat(deltaStr) : null;
 
         parsed = {
           value: !isNaN(numVal) ? numVal : formattedMatch[2],
@@ -228,7 +239,9 @@ export function parseHeadlineMetric(
           label: customLabel || domain.display_name.split(' ')[0] + ' Metric',
           metric_key: undefined,
           delta_from_baseline_pct: delta,
+          delta_from_baseline_pct_str: deltaStr,
           baseline_mean: baseline,
+          baseline_mean_str: baselineStr,
         };
       } else {
         parsed = {
@@ -279,7 +292,10 @@ export function parseHeadlineMetric(
           const cMatch = relevantFinding.what_changed.match(/current:\s*([0-9.]+)/i);
           const bMatch = relevantFinding.what_changed.match(/baseline(?:\s*mean)?:\s*([0-9.]+)/i);
           if (cMatch) parsed.value = parseFloat(cMatch[1]);
-          if (bMatch) parsed.baseline_mean = parseFloat(bMatch[1]);
+          if (bMatch) {
+            parsed.baseline_mean = parseFloat(bMatch[1]);
+            parsed.baseline_mean_str = bMatch[1];
+          }
         }
       }
     }
@@ -295,21 +311,9 @@ export function parseHeadlineMetric(
       else if (droppedMatch) parsed.value = parseFloat(droppedMatch[1]);
       else if (elevatedMatch) parsed.value = parseFloat(elevatedMatch[1]);
 
-      if (bMatch) parsed.baseline_mean = parseFloat(bMatch[1]);
-    }
-
-    // 3. Sync from detail if matching domain
-    if (detail && detail.domain_id === domain.domain_id && detail.metrics?.[0]) {
-      const m = detail.metrics[0];
-      const validPts = (m.series || []).filter((p) => p.quality === 'VALID' && p.value !== null);
-      if (validPts.length > 0) {
-        const latest = validPts[validPts.length - 1];
-        if (latest.value !== null) {
-          parsed.value = latest.value;
-        }
-      }
-      if (m.baseline?.mean) {
-        parsed.baseline_mean = m.baseline.mean;
+      if (bMatch) {
+        parsed.baseline_mean = parseFloat(bMatch[1]);
+        parsed.baseline_mean_str = bMatch[1];
       }
     }
 
@@ -317,9 +321,9 @@ export function parseHeadlineMetric(
     if (typeof parsed.value === 'number' && parsed.baseline_mean && parsed.baseline_mean > 0) {
       parsed.delta_from_baseline_pct =
         Math.round(((parsed.value - parsed.baseline_mean) / parsed.baseline_mean) * 1000) / 10;
+      parsed.delta_from_baseline_pct_str = `${parsed.delta_from_baseline_pct >= 0 ? '+' : ''}${parsed.delta_from_baseline_pct.toFixed(1)}`;
     }
   }
-
   return parsed;
 }
 
@@ -328,7 +332,6 @@ export const DomainCard: React.FC<DomainCardProps> = ({
   isSelected = false,
   onSelect,
   findings,
-  detail,
 }) => {
   const isInsufficient = domain.status === 'INSUFFICIENT_DATA';
   const isAttention = domain.status === 'ATTENTION';
@@ -355,7 +358,7 @@ export const DomainCard: React.FC<DomainCardProps> = ({
   }
 
   const shortName = DOMAIN_SHORT_NAMES[domain.domain_id] || domain.display_name;
-  const parsed = parseHeadlineMetric(domain, findings, detail);
+  const parsed = parseHeadlineMetric(domain, findings);
 
   return (
     <div
@@ -597,8 +600,9 @@ export const DomainCard: React.FC<DomainCardProps> = ({
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {parsed.delta_from_baseline_pct >= 0 ? '+' : ''}
-                  {parsed.delta_from_baseline_pct.toFixed(1)}% vs baseline
+                  {parsed.delta_from_baseline_pct_str
+                    ? `${parsed.delta_from_baseline_pct_str.startsWith('+') || parsed.delta_from_baseline_pct_str.startsWith('-') ? '' : '+'}${parsed.delta_from_baseline_pct_str}% vs baseline`
+                    : `${parsed.delta_from_baseline_pct >= 0 ? '+' : ''}${parsed.delta_from_baseline_pct.toFixed(1)}% vs baseline`}
                 </span>
               )}
               {parsed.baseline_mean !== null && (
@@ -608,7 +612,7 @@ export const DomainCard: React.FC<DomainCardProps> = ({
                     data-testid="headline-baseline"
                     style={{ color: '#94A3B8', whiteSpace: 'nowrap' }}
                   >
-                    Baseline: {parsed.baseline_mean} {parsed.unit}
+                    Baseline: {parsed.baseline_mean_str ?? parsed.baseline_mean} {parsed.unit}
                   </span>
                 </>
               )}

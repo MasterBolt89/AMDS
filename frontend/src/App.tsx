@@ -605,7 +605,6 @@ export const App: React.FC = () => {
                   isSelected={selectedDomainId === dom.domain_id}
                   onSelect={handleSelectDomain}
                   findings={dashboard.findings}
-                  detail={selectedDomainId === dom.domain_id ? activeDomainDetail : null}
                 />
               ))}
             </div>
