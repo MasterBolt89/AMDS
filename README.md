@@ -196,6 +196,13 @@ uv run pytest -v
 ```
 * **Coverage:** 16 tests covering OpenAPI schema compliance, 9-domain dashboard aggregation, statistical drift formulas, cross-domain clinical findings, time-windowed reassessment outcome transitions, scenario seed loading, and RFC 7807 error envelopes.
 
+### Frontend Automated Test Suite (Vitest + RTL)
+```bash
+cd frontend
+npm test
+```
+* **Coverage:** 18 automated tests across `contractAndScenarios.test.ts`, `DomainCard.test.tsx`, and `fullstackIntegration.test.ts` validating all 4 judge scenarios, 9 domains, 8 Personal vs 1 ECLSS breakdown, strict `INSUFFICIENT_DATA` safety guardrails, and tabular monospace headline metric displays.
+
 ### Frontend Production Build & TypeScript Verification
 ```bash
 cd frontend

@@ -94,6 +94,8 @@ export interface DataProvenanceSummary {
 
 export interface HeadlineMetricObject {
   name: string;
+  label?: string;
+  metric_key?: string;
   value: number | null;
   unit: string;
   baseline_mean: number | null;

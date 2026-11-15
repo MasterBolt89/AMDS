@@ -60,7 +60,7 @@ class DomainSummary(BaseModel):
     status: AssessmentStatus
     completeness_pct: float
     last_updated: Optional[datetime] = None
-    headline_metric: str
+    headline_metric: Optional[str] = None
     status_reason: str
     active_finding_count: int
 

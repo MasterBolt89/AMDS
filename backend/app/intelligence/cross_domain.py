@@ -215,7 +215,7 @@ def build_intelligence_report(
             status=ev.status,
             completeness_pct=ev.completeness_pct,
             last_updated=ev.last_updated,
-            headline_metric=ev.headline_metric,
+            headline_metric=None if ev.status == AssessmentStatus.INSUFFICIENT_DATA else ev.headline_metric,
             status_reason=ev.status_reason,
             active_finding_count=active_finding_count_by_domain[domain_id],
         )
