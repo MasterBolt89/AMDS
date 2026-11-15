@@ -1,7 +1,8 @@
 import React from 'react';
 import { DashboardResponse, SimulationScenarioItem, AstronautSummary } from '../types/api';
+import { ConnectionState } from '../api/client';
 import { ProvenanceBadge } from './StatusBadge';
-import { Radio, Clock, User, AlertTriangle, PlusCircle, Activity } from 'lucide-react';
+import { Radio, Clock, User, AlertTriangle, PlusCircle, Activity, Server, Database } from 'lucide-react';
 
 interface HeaderProps {
   dashboard: DashboardResponse;
@@ -9,6 +10,7 @@ interface HeaderProps {
   activeScenarioId: string;
   astronauts: AstronautSummary[];
   activeAstronautId: string;
+  connectionState?: ConnectionState;
   onSelectAstronaut: (astronautId: string) => void;
   onSelectScenario: (scenarioId: string) => void;
   onOpenRisks: () => void;
@@ -21,6 +23,7 @@ export const Header: React.FC<HeaderProps> = ({
   activeScenarioId,
   astronauts,
   activeAstronautId,
+  connectionState = 'LIVE_BACKEND',
   onSelectAstronaut,
   onSelectScenario,
   onOpenRisks,
@@ -76,6 +79,51 @@ export const Header: React.FC<HeaderProps> = ({
               AEROSPACE MEDICAL PROGNOSTICS & FLIGHT-SURGEON CONSOLE
             </div>
           </div>
+
+          {/* Engine Connection State Status Badge */}
+          {connectionState === 'LIVE_BACKEND' ? (
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                backgroundColor: '#064E3B',
+                border: '1px solid #059669',
+                color: '#6EE7B7',
+                padding: '2px 8px',
+                borderRadius: '2px',
+                fontSize: '10px',
+                fontWeight: 800,
+                fontFamily: "'JetBrains Mono', monospace",
+                letterSpacing: '0.06em',
+              }}
+              title="Connected to live Python FastAPI intelligence engine"
+            >
+              <Server size={11} color="#10B981" />
+              <span>LIVE FASTAPI ENGINE</span>
+            </div>
+          ) : (
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                backgroundColor: '#78350F',
+                border: '1px solid #D97706',
+                color: '#FDE68A',
+                padding: '2px 8px',
+                borderRadius: '2px',
+                fontSize: '10px',
+                fontWeight: 800,
+                fontFamily: "'JetBrains Mono', monospace",
+                letterSpacing: '0.06em',
+              }}
+              title="Operating on in-browser stateful mock simulator"
+            >
+              <Database size={11} color="#F59E0B" />
+              <span>MOCK SIMULATOR</span>
+            </div>
+          )}
         </div>
 
         {/* Action Controls & Dropdowns */}

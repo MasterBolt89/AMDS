@@ -147,5 +147,50 @@ describe('DomainCard Component & Headline Metric Parser', () => {
       expect(screen.queryByTestId('headline-value')).not.toBeInTheDocument();
       expect(screen.queryByText('NORMAL')).not.toBeInTheDocument();
     });
+
+    it('syncs active observation drift on ATTENTION domain tiles from findings', () => {
+      const domain: DomainSummary = {
+        domain_id: 'cardiovascular',
+        domain_category: 'PERSONAL_HEALTH',
+        display_name: 'Cardiovascular Health',
+        measurement_scope_notice: 'Physiological cardiovascular telemetry.',
+        status: 'ATTENTION',
+        completeness_pct: 100,
+        headline_metric: 'resting_hr_bpm',
+        status_reason: 'Statistical baseline drift detected: 3.73 standard deviations above 14-day personal baseline (delta: 11.93 bpm).',
+      };
+
+      const findings = [
+        {
+          finding_id: 'FINDING-CARDIOVASCULAR-BASELINE-DRIFT',
+          severity: 'ATTENTION' as const,
+          is_cross_domain: false,
+          involved_domains: ['cardiovascular' as const],
+          title: 'Cardiovascular Health Baseline Drift',
+          what_changed:
+            'resting_hr_bpm shows a statistical elevation of 3.73 standard deviations from personal 14-day rolling baseline (current: 75.0, baseline mean: 63.07, std: 3.2).',
+          why_it_matters: 'Elevated resting HR.',
+          evidence: {
+            evidence_type: 'STATISTICAL_BASELINE_DRIFT' as const,
+            is_validated_clinical_threshold: false,
+            supporting_metrics: {
+              cardiovascular: {
+                headline_metric: 'resting_hr_bpm',
+                current_value: 75.0,
+                z_score: 3.73,
+              },
+            },
+            reference_source: 'NASA HRP',
+          },
+        },
+      ];
+
+      render(<DomainCard domain={domain} findings={findings} onSelect={onSelectMock} />);
+
+      expect(screen.getByTestId('headline-value')).toHaveTextContent('75');
+      expect(screen.getByTestId('headline-unit')).toHaveTextContent('bpm');
+      expect(screen.getByTestId('headline-delta')).toHaveTextContent('+18.9% vs baseline');
+      expect(screen.getByTestId('headline-baseline')).toHaveTextContent('Baseline: 63.07 bpm');
+    });
   });
 });

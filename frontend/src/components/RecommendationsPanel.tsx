@@ -20,15 +20,19 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
   recommendations,
   onAcknowledge,
 }) => {
+  const [activeIdx, setActiveIdx] = useState<number>(0);
   const [selectedRecId, setSelectedRecId] = useState<string | null>(null);
   const [actionNote, setActionNote] = useState<string>('');
   const [submitting, setSubmitting] = useState<boolean>(false);
 
-  const handleOpenModal = (rec: RecommendationItem) => {
-    const rId = rec.recommendation_id || (rec as any).id;
+  const safeIdx = Math.min(activeIdx, Math.max(0, recommendations.length - 1));
+  const rec = recommendations[safeIdx];
+
+  const handleOpenModal = (r: RecommendationItem) => {
+    const rId = r.recommendation_id || (r as any).id;
     setSelectedRecId(rId);
     setActionNote(
-      rec.reassessment?.action_taken_note ||
+      r.reassessment?.action_taken_note ||
         'Countermeasure initiated: Bedtime shifted 30min earlier, pre-sleep blue-depleted lighting protocol engaged, cycle ergometer rescheduled.'
     );
   };
@@ -45,13 +49,24 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
     }
   };
 
+  const rId = rec ? rec.recommendation_id || (rec as any).id : null;
+  const isAcknowledged =
+    rec?.reassessment?.status === 'ACKNOWLEDGED' ||
+    rec?.reassessment?.status === 'RESOLVED';
+  const isImproved = rec?.reassessment?.outcome === 'IMPROVED';
+
   return (
     <div
       style={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
         backgroundColor: '#0C101A',
         border: '1px solid #1E293B',
         borderRadius: '2px',
-        padding: '10px 12px',
+        padding: '12px 14px',
+        minHeight: 0,
+        overflow: 'hidden',
       }}
     >
       {/* Panel Header */}
@@ -61,259 +76,308 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
           alignItems: 'center',
           justifyContent: 'space-between',
           borderBottom: '1px solid #1E293B',
-          paddingBottom: '6px',
-          marginBottom: '8px',
+          paddingBottom: '8px',
+          marginBottom: '10px',
+          flexShrink: 0,
+          gap: '8px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <ShieldAlert size={14} color="#FBBF24" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+          <ShieldAlert size={15} color="#FBBF24" style={{ flexShrink: 0 }} />
           <h2
             style={{
-              fontSize: '11px',
+              fontSize: '12px',
               fontWeight: 800,
               margin: 0,
               letterSpacing: '0.04em',
               textTransform: 'uppercase',
               color: '#F8FAFC',
               fontFamily: "'JetBrains Mono', monospace",
+              whiteSpace: 'nowrap',
             }}
           >
             RECOMMENDED PROTOCOL & ESCALATION TRIGGER ({recommendations.length})
           </h2>
         </div>
-        <div
-          style={{
-            fontSize: '8.5px',
-            color: '#64748B',
-            fontFamily: "'JetBrains Mono', monospace",
-            textTransform: 'uppercase',
-          }}
-        >
-          CLOSED-LOOP CONTROL
-        </div>
+
+        {/* Compact Selector Tabs [1] [2] [3] [4] */}
+        {recommendations.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+            {recommendations.map((item, i) => {
+              const isSelected = safeIdx === i;
+              const itemAck =
+                item.reassessment?.status === 'ACKNOWLEDGED' ||
+                item.reassessment?.status === 'RESOLVED';
+              return (
+                <button
+                  key={i}
+                  onClick={() => setActiveIdx(i)}
+                  style={{
+                    backgroundColor: isSelected ? '#1E293B' : '#07090F',
+                    border: `1px solid ${isSelected ? '#FBBF24' : '#334155'}`,
+                    color: isSelected ? '#FBBF24' : '#94A3B8',
+                    padding: '2px 8px',
+                    borderRadius: '2px',
+                    fontSize: '11px',
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    transition: 'all 0.12s ease',
+                  }}
+                >
+                  <span style={{ color: itemAck ? '#34D399' : '#FBBF24', fontSize: '9px' }}>●</span>
+                  <span>[{i + 1}]</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {recommendations.length === 0 ? (
+      {recommendations.length === 0 || !rec ? (
         <div
           style={{
-            padding: '16px',
+            padding: '24px',
             textAlign: 'center',
             color: '#64748B',
-            fontSize: '10.5px',
+            fontSize: '12px',
             fontFamily: "'JetBrains Mono', monospace",
           }}
         >
           No active clinical protocols pending. All surveillance values within nominal limits.
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {recommendations.map((rec) => {
-            const rId = rec.recommendation_id || (rec as any).id;
-            const isAcknowledged =
-              rec.reassessment?.status === 'ACKNOWLEDGED' ||
-              rec.reassessment?.status === 'RESOLVED';
-            const isImproved = rec.reassessment?.outcome === 'IMPROVED';
+        <div
+          style={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: 'auto',
+            backgroundColor: '#07090F',
+            border: isImproved ? '1px solid #059669' : '1px solid #1E293B',
+            borderRadius: '2px',
+            padding: '14px 16px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+          }}
+        >
+          {/* Header: Clean Human-Readable Title & Outcome Badge */}
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '6px',
+            }}
+          >
+            <span style={{ fontSize: '14px', fontWeight: 700, color: '#F8FAFC' }}>
+              {rec.title || `Intervention for Finding ${rec.finding_id}`}
+            </span>
 
-            return (
-              <div
-                key={rId}
+            {isImproved && (
+              <span
                 style={{
-                  backgroundColor: '#07090F',
-                  border: isImproved ? '1px solid #059669' : '1px solid #1E293B',
+                  fontSize: '10px',
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontWeight: 700,
+                  padding: '2px 6px',
                   borderRadius: '2px',
-                  padding: '9px 11px',
+                  backgroundColor: '#064E3B',
+                  color: '#34D399',
+                  border: '1px solid #059669',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
                 }}
               >
-                {/* Header: ID, Title & Outcome Badge */}
-                <div
-                  style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '4px',
-                    marginBottom: '6px',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span
-                      style={{
-                        fontFamily: "'JetBrains Mono', monospace",
-                        fontSize: '9.5px',
-                        color: '#FBBF24',
-                        fontWeight: 700,
-                        backgroundColor: '#451A03',
-                        padding: '1px 5px',
-                        border: '1px solid #78350F',
-                        borderRadius: '2px',
-                      }}
-                    >
-                      {rId}
-                    </span>
-                    <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#F8FAFC' }}>
-                      {rec.title || `Intervention for Finding ${rec.finding_id}`}
-                    </span>
-                  </div>
+                <TrendingUp size={11} />
+                OUTCOME: IMPROVED
+              </span>
+            )}
+          </div>
 
-                  {isImproved && (
-                    <span
-                      style={{
-                        fontSize: '9px',
-                        fontFamily: "'JetBrains Mono', monospace",
-                        fontWeight: 700,
-                        padding: '1px 5px',
-                        borderRadius: '2px',
-                        backgroundColor: '#064E3B',
-                        color: '#34D399',
-                        border: '1px solid #059669',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '3px',
-                      }}
-                    >
-                      <TrendingUp size={10} />
-                      OUTCOME: IMPROVED
-                    </span>
-                  )}
-                </div>
+          {/* Sleek Stage Progress Bar */}
+          <div
+            style={{
+              backgroundColor: '#0C101A',
+              border: '1px solid #1E293B',
+              borderRadius: '2px',
+              padding: '6px 10px',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                fontSize: '11px',
+                fontFamily: "'JetBrains Mono', monospace",
+                fontWeight: 700,
+                marginBottom: '4px',
+              }}
+            >
+              <span style={{ color: isAcknowledged ? '#34D399' : '#38BDF8' }}>
+                {isAcknowledged ? 'STAGE 5 OF 5: REASSESS' : 'STAGE 4 OF 5: ACT'}
+              </span>
+              <span style={{ color: '#64748B' }}>
+                {isAcknowledged ? '5/5' : '4/5'}
+              </span>
+            </div>
+            <div
+              style={{
+                height: '4px',
+                width: '100%',
+                backgroundColor: '#1E293B',
+                borderRadius: '1px',
+                overflow: 'hidden',
+              }}
+            >
+              <div
+                style={{
+                  height: '100%',
+                  width: isAcknowledged ? '100%' : '80%',
+                  backgroundColor: isAcknowledged ? '#34D399' : '#38BDF8',
+                  transition: 'width 0.3s ease',
+                }}
+              />
+            </div>
+          </div>
 
-                {/* Sleek Stage Progress Bar */}
-                <div
-                  style={{
-                    backgroundColor: '#0C101A',
-                    border: '1px solid #1E293B',
-                    borderRadius: '2px',
-                    padding: '5px 8px',
-                    marginBottom: '6px',
-                  }}
-                >
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      fontSize: '9px',
-                      fontFamily: "'JetBrains Mono', monospace",
-                      fontWeight: 700,
-                      marginBottom: '3px',
-                    }}
-                  >
-                    <span style={{ color: isAcknowledged ? '#34D399' : '#38BDF8' }}>
-                      {isAcknowledged ? 'STAGE 5 OF 5: REASSESS' : 'STAGE 4 OF 5: ACT'}
-                    </span>
-                    <span style={{ color: '#64748B' }}>
-                      {isAcknowledged ? '5/5' : '4/5'}
-                    </span>
-                  </div>
-                  {/* Slim 3px Progress Bar */}
-                  <div
-                    style={{
-                      height: '3px',
-                      width: '100%',
-                      backgroundColor: '#1E293B',
-                      borderRadius: '1px',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    <div
-                      style={{
-                        height: '100%',
-                        width: isAcknowledged ? '100%' : '80%',
-                        backgroundColor: isAcknowledged ? '#34D399' : '#38BDF8',
-                        transition: 'width 0.3s ease',
-                      }}
-                    />
-                  </div>
-                </div>
+          {/* Action Directive */}
+          <div>
+            <div
+              style={{
+                fontSize: '10px',
+                color: '#64748B',
+                textTransform: 'uppercase',
+                fontFamily: "'JetBrains Mono', monospace",
+                marginBottom: '2px',
+              }}
+            >
+              Clinical Countermeasure Protocol
+            </div>
+            <div style={{ fontSize: '12px', color: '#CBD5E1', lineHeight: '1.45' }}>
+              {rec.action_summary}
+            </div>
+          </div>
 
-                {/* Action Directive */}
-                <div style={{ marginBottom: '6px' }}>
-                  <div style={{ fontSize: '8.5px', color: '#64748B', textTransform: 'uppercase', fontFamily: "'JetBrains Mono', monospace", marginBottom: '1px' }}>
-                    Clinical Countermeasure Protocol
-                  </div>
-                  <div style={{ fontSize: '11px', color: '#CBD5E1', lineHeight: '1.35' }}>
-                    {rec.action_summary}
-                  </div>
-                </div>
+          {/* Latency-Aware Consultation Guidance */}
+          <div
+            style={{
+              backgroundColor: '#0C101A',
+              borderLeft: '2px solid #38BDF8',
+              padding: '6px 10px',
+              borderRadius: '2px',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '11px',
+                color: '#38BDF8',
+                fontWeight: 700,
+                fontFamily: "'JetBrains Mono', monospace",
+                marginBottom: '2px',
+              }}
+            >
+              <Radio size={12} />
+              <span>MISSION COMMS PROTOCOL GUIDANCE</span>
+            </div>
+            <div style={{ fontSize: '11.5px', color: '#94A3B8', lineHeight: '1.4' }}>
+              {rec.consultation_guidance}
+            </div>
+          </div>
 
-                {/* Latency-Aware Consultation Guidance */}
-                <div
-                  style={{
-                    backgroundColor: '#0C101A',
-                    borderLeft: '2px solid #38BDF8',
-                    padding: '5px 7px',
-                    borderRadius: '2px',
-                    marginBottom: '6px',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '9px', color: '#38BDF8', fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", marginBottom: '1px' }}>
-                    <Radio size={10} />
-                    <span>MISSION COMMS PROTOCOL GUIDANCE</span>
-                  </div>
-                  <div style={{ fontSize: '10.5px', color: '#94A3B8', lineHeight: '1.3' }}>
-                    {rec.consultation_guidance}
-                  </div>
-                </div>
+          {/* ESCALATE WHEN Alert Trigger */}
+          <div
+            style={{
+              backgroundColor: '#1C0E10',
+              border: '1px solid #7F1D1D',
+              borderLeft: '3px solid #EF4444',
+              padding: '8px 10px',
+              borderRadius: '2px',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '11px',
+                color: '#EF4444',
+                fontWeight: 800,
+                fontFamily: "'JetBrains Mono', monospace",
+                marginBottom: '2px',
+              }}
+            >
+              <AlertOctagon size={13} color="#EF4444" />
+              <span>ESCALATE WHEN:</span>
+            </div>
+            <div style={{ fontSize: '12px', color: '#FCA5A5', lineHeight: '1.4', fontWeight: 500 }}>
+              {rec.escalate_when}
+            </div>
+          </div>
 
-                {/* ESCALATE WHEN Alert Trigger */}
-                <div
-                  style={{
-                    backgroundColor: '#1C0E10',
-                    border: '1px solid #7F1D1D',
-                    borderLeft: '3px solid #EF4444',
-                    padding: '6px 8px',
-                    borderRadius: '2px',
-                    marginBottom: '7px',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '9px', color: '#EF4444', fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", marginBottom: '1px' }}>
-                    <AlertOctagon size={11} color="#EF4444" />
-                    <span>ESCALATE WHEN:</span>
-                  </div>
-                  <div style={{ fontSize: '10.5px', color: '#FCA5A5', lineHeight: '1.3', fontWeight: 500 }}>
-                    {rec.escalate_when}
-                  </div>
-                </div>
-
-                {/* Logged Action Note or Interactive Action Button */}
-                {isAcknowledged ? (
-                  <div
-                    style={{
-                      backgroundColor: '#064E3B20',
-                      border: '1px solid #059669',
-                      padding: '6px 8px',
-                      borderRadius: '2px',
-                      fontSize: '10.5px',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#34D399', fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", marginBottom: '2px' }}>
-                      <CheckCircle2 size={11} />
-                      <span>ACTION LOGGED & REASSESSMENT ENGAGED</span>
-                    </div>
-                    {rec.reassessment?.action_taken_note && (
-                      <div style={{ color: '#D1FAE5', fontStyle: 'italic', marginBottom: '3px' }}>
-                        "{rec.reassessment.action_taken_note}"
-                      </div>
-                    )}
-                    {rec.reassessment?.acknowledged_at && (
-                      <div style={{ fontSize: '8.5px', color: '#6EE7B7', fontFamily: "'JetBrains Mono', monospace" }}>
-                        Logged: {new Date(rec.reassessment.acknowledged_at).toUTCString()}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <button
-                    className="aero-btn aero-btn-primary"
-                    style={{ width: '100%', justifyContent: 'center', padding: '5px 10px', fontSize: '10.5px', fontWeight: 700 }}
-                    onClick={() => handleOpenModal(rec)}
-                  >
-                    <FileCheck2 size={12} />
-                    <span>Acknowledge & Log Action</span>
-                  </button>
-                )}
+          {/* Logged Action Note or Interactive Action Button */}
+          {isAcknowledged ? (
+            <div
+              style={{
+                backgroundColor: '#064E3B20',
+                border: '1px solid #059669',
+                padding: '8px 10px',
+                borderRadius: '2px',
+                fontSize: '11px',
+                marginTop: 'auto',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  color: '#34D399',
+                  fontWeight: 700,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  marginBottom: '3px',
+                }}
+              >
+                <CheckCircle2 size={13} />
+                <span>ACTION LOGGED & REASSESSMENT ENGAGED</span>
               </div>
-            );
-          })}
+              {rec.reassessment?.action_taken_note && (
+                <div style={{ color: '#D1FAE5', fontStyle: 'italic', marginBottom: '3px' }}>
+                  "{rec.reassessment.action_taken_note}"
+                </div>
+              )}
+              {rec.reassessment?.acknowledged_at && (
+                <div style={{ fontSize: '9px', color: '#6EE7B7', fontFamily: "'JetBrains Mono', monospace" }}>
+                  Logged: {new Date(rec.reassessment.acknowledged_at).toUTCString()}
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              className="aero-btn aero-btn-primary"
+              style={{
+                width: '100%',
+                justifyContent: 'center',
+                padding: '8px 14px',
+                fontSize: '12px',
+                fontWeight: 700,
+                marginTop: 'auto',
+              }}
+              onClick={() => handleOpenModal(rec)}
+            >
+              <FileCheck2 size={14} />
+              <span>Acknowledge & Log Action</span>
+            </button>
+          )}
         </div>
       )}
 
