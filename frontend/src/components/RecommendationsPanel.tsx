@@ -33,7 +33,7 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
     setSelectedRecId(rId);
     setActionNote(
       r.reassessment?.action_taken_note ||
-        'Countermeasure initiated: Bedtime shifted 30min earlier, pre-sleep blue-depleted lighting protocol engaged, cycle ergometer rescheduled.'
+      'Countermeasure initiated: Bedtime shifted 30min earlier, pre-sleep blue-depleted lighting protocol engaged, cycle ergometer rescheduled.'
     );
   };
 
@@ -83,7 +83,7 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
           minWidth: 0,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, flex: 1, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, flex: 1, overflow: 'hidden', paddingRight: '16px' }}>
           <ShieldAlert size={15} color="#FBBF24" style={{ flexShrink: 0 }} />
           <h2
             style={{
@@ -101,7 +101,8 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
             }}
             title={`RECOMMENDED PROTOCOL & ESCALATION TRIGGER (${recommendations.length})`}
           >
-            RECOMMENDED PROTOCOL & ESCALATION TRIGGER ({recommendations.length})
+            <span className="hidden 2xl:inline">RECOMMENDED PROTOCOL & ESCALATION TRIGGER</span>
+            <span className="2xl:hidden">RECOMMENDED PROTOCOL</span> ({recommendations.length})
           </h2>
         </div>
 

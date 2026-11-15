@@ -79,6 +79,13 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
   const metric: DomainMetricDetail | undefined = detail?.metrics[0];
   const metricName = metric?.metric_name || 'telemetry_stream';
   const unit = metric?.unit || '';
+  const displayUnit = useMemo(() => {
+    if (unit === '/' || unit === '/100') return '/100';
+    if (unit === 'score_1_10') return 'score';
+    if (detail?.domain_id === 'behavioral_psych' && (unit === '' || unit === '/')) return '/100';
+    if (detail?.domain_id === 'sensorimotor_neuro' && (unit === '' || unit === 'score_1_10')) return 'score';
+    return unit;
+  }, [unit, detail?.domain_id]);
 
   // Calculate relative mission day boundaries
   const allDays = (metric?.series || []).map((s: MetricSeriesPoint) => s.mission_day || 42);
@@ -208,7 +215,7 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
             <span style={{ fontSize: '14px', fontWeight: 800, color: data.isSuspect ? '#FBBF24' : '#F8FAFC' }}>
-              {data.value !== null ? `${data.value} ${unit}` : 'MISSING (No Signal)'}
+              {data.value !== null ? `${data.value} ${displayUnit}` : 'MISSING (No Signal)'}
             </span>
             <span
               style={{
@@ -311,15 +318,14 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
           minWidth: 0,
         }}
       >
-        {/* Metric Title: min-w-0 flex-1 truncate */}
+        {/* Metric Title: min-w-0 flex-1 */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
             minWidth: 0,
-            flex: 1,
-            overflow: 'hidden',
+            flex: '1 1 auto',
           }}
         >
           <Activity size={13} color="#34D399" style={{ flexShrink: 0 }} />
@@ -328,7 +334,6 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
               display: 'flex',
               alignItems: 'center',
               minWidth: 0,
-              overflow: 'hidden',
               whiteSpace: 'nowrap',
             }}
           >
@@ -352,10 +357,8 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
                 fontWeight: 700,
                 color: '#F8FAFC',
                 fontFamily: "'JetBrains Mono', monospace",
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
-                minWidth: 0,
+                flexShrink: 0,
               }}
               title={`${detail.display_name} (${metricName})`}
             >
@@ -367,7 +370,10 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
                 fontSize: '9px',
                 color: '#64748B',
                 fontFamily: "'JetBrains Mono', monospace",
-                flexShrink: 0,
+                flexShrink: 1,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
               }}
             >
               [SURVEILLANCE ONLY]
@@ -525,21 +531,22 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
       >
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 4, right: 12, left: -14, bottom: 0 }}>
+            <LineChart data={chartData} margin={{ top: 4, right: 16, left: 6, bottom: 0 }}>
               <CartesianGrid stroke="#1E293B" strokeDasharray="2 2" vertical={false} />
               <XAxis
                 dataKey="timeLabel"
                 stroke="#475569"
                 tick={{ fill: '#64748B', fontSize: 8, fontFamily: "'JetBrains Mono', monospace" }}
                 tickLine={{ stroke: '#1E293B' }}
+                padding={{ left: 14, right: 14 }}
               />
               <YAxis
                 domain={[yMin, yMax]}
                 stroke="#475569"
                 tick={{ fill: '#64748B', fontSize: 8, fontFamily: "'JetBrains Mono', monospace" }}
                 tickLine={{ stroke: '#1E293B' }}
-                unit={` ${unit}`}
-                width={46}
+                unit={` ${displayUnit}`}
+                width={68}
               />
               <Tooltip content={<CustomTooltip />} />
 

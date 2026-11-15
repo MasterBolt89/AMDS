@@ -69,7 +69,8 @@ export const FindingsPanel: React.FC<FindingsPanelProps> = ({ findings, onSelect
             }}
             title={`CROSS-DOMAIN FINDINGS & ACTION QUEUE (${findings.length})`}
           >
-            CROSS-DOMAIN FINDINGS & ACTION QUEUE ({findings.length})
+            <span className="hidden 2xl:inline">CROSS-DOMAIN FINDINGS & ACTION QUEUE</span>
+            <span className="2xl:hidden">FINDINGS & ACTION QUEUE</span> ({findings.length})
           </h2>
         </div>
 

@@ -54,6 +54,42 @@ body {
   border-radius: 2px;
 }
 
+.aero-panel {
+  background-color: #0C101A;
+  border: 1px solid #1E293B;
+  border-radius: 2px;
+}
+
+.aero-well {
+  background-color: #07090F;
+  border: 1px solid #1E293B;
+  border-radius: 2px;
+}
+
+/* Modals & Overlays - Option 2 Slate-Obsidian Hairline Design */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(4, 6, 11, 0.85);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.modal-content {
+  background-color: #080B12;
+  border: 1px solid #1E293B;
+  border-radius: 2px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.95);
+  color: #F8FAFC;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
 /* Buttons */
 .aero-btn {
   background-color: #121826;

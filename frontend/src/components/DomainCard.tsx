@@ -74,8 +74,8 @@ export const METRIC_DICTIONARY: Record<
   resting_hr_bpm: {
     label: 'Resting Heart Rate',
     unit: 'bpm',
-    nominalValue: 60,
-    nominalBaseline: 60,
+    nominalValue: 62.0,
+    nominalBaseline: 62.0,
   },
   sleep_duration_hours: {
     label: 'Sleep Duration',
@@ -86,44 +86,44 @@ export const METRIC_DICTIONARY: Record<
   cognitive_fatigue_score: {
     label: 'Cognitive Fatigue Score',
     unit: '/100',
-    nominalValue: 15,
-    nominalBaseline: 15,
+    nominalValue: 15.0,
+    nominalBaseline: 15.0,
   },
   exercise_adherence_pct: {
     label: 'Exercise Adherence',
     unit: '%',
-    nominalValue: 95,
-    nominalBaseline: 95,
+    nominalValue: 95.0,
+    nominalBaseline: 95.0,
   },
   crp_biomarker_mg_l: {
     label: 'C-Reactive Protein (CRP)',
     unit: 'mg/L',
     nominalValue: 0.82,
-    nominalBaseline: 0.85,
+    nominalBaseline: 0.82,
   },
   daily_dose_msv: {
     label: 'Daily Radiation Dose',
     unit: 'mSv',
-    nominalValue: 0.35,
-    nominalBaseline: 0.35,
+    nominalValue: 0.42,
+    nominalBaseline: 0.42,
   },
   co2_partial_pressure_mmhg: {
     label: 'Cabin ppCO₂',
     unit: 'mmHg',
-    nominalValue: 2.8,
-    nominalBaseline: 2.8,
+    nominalValue: 2.2,
+    nominalBaseline: 2.2,
   },
   postural_instability_score: {
     label: 'Postural Sway Instability',
-    unit: 'mm/s',
-    nominalValue: 12.0,
-    nominalBaseline: 12.0,
+    unit: 'score',
+    nominalValue: 1.5,
+    nominalBaseline: 1.5,
   },
   caloric_intake_kcal: {
     label: 'Caloric Intake',
     unit: 'kcal',
-    nominalValue: 2800,
-    nominalBaseline: 2800,
+    nominalValue: 2800.0,
+    nominalBaseline: 2800.0,
   },
 };
 
@@ -149,9 +149,13 @@ export function parseHeadlineMetric(
       raw.metric_key || (typeof raw.name === 'string' && raw.name.includes('_') ? raw.name : undefined);
     const meta = metricKey ? METRIC_DICTIONARY[metricKey] : undefined;
 
+    let unit = raw.unit || meta?.unit || '';
+    if (unit === '/') unit = '/100';
+    if (unit === 'score_1_10') unit = 'score';
+
     parsed = {
       value: raw.value !== null && raw.value !== undefined ? raw.value : '—',
-      unit: raw.unit || meta?.unit || '',
+      unit,
       label: raw.label || raw.name || meta?.label || 'Headline Metric',
       metric_key: metricKey,
       delta_from_baseline_pct:
@@ -206,13 +210,15 @@ export function parseHeadlineMetric(
       };
     } else {
       const formattedMatch = text.match(
-        /^(?:([A-Za-z\s]+):\s*)?([0-9.]+)\s*([a-zA-Z/%]+)?(?:\s*\(Baseline:\s*([0-9.]+)[^,]*,\s*([+-]?[0-9.]+)%[^)]*\))?/i
+        /^(?:([A-Za-z\s]+):\s*)?([0-9.]+)\s*([a-zA-Z0-9_/%]+)?(?:\s*\(Baseline:\s*([0-9.]+)[^,]*,\s*([+-]?[0-9.]+)%[^)]*\))?/i
       );
 
       if (formattedMatch) {
         const customLabel = formattedMatch[1]?.trim();
         const numVal = parseFloat(formattedMatch[2]);
-        const unit = formattedMatch[3]?.trim() || '';
+        let unit = formattedMatch[3]?.trim() || '';
+        if (unit === '/') unit = '/100';
+        if (unit === 'score_1_10') unit = 'score';
         const baseline = formattedMatch[4] ? parseFloat(formattedMatch[4]) : null;
         const delta = formattedMatch[5] ? parseFloat(formattedMatch[5]) : null;
 
@@ -239,48 +245,75 @@ export function parseHeadlineMetric(
 
   if (!parsed) return null;
 
-  // Sync active observation drift from findings if present and domain is ATTENTION or delta is 0
-  if (findings && findings.length > 0) {
-    const finding = findings.find((f) => {
-      const idMatch = f.finding_id?.toLowerCase().includes(domain.domain_id);
-      const invMatch = f.involved_domains?.includes(domain.domain_id);
-      const suppMatch = f.evidence?.supporting_metrics?.[domain.domain_id] !== undefined;
-      return idMatch || invMatch || suppMatch;
-    });
-
-    if (finding) {
-      // 1. Check supporting_metrics
-      const sm = finding.evidence?.supporting_metrics?.[domain.domain_id];
-      if (sm && typeof sm.current_value === 'number') {
-        parsed.value = sm.current_value;
-      }
-      // 2. Check what_changed text
-      if (finding.what_changed) {
-        const cMatch = finding.what_changed.match(/current:\s*([0-9.]+)/i);
-        const bMatch = finding.what_changed.match(/baseline(?:\s*mean)?:\s*([0-9.]+)/i);
-        if (cMatch) parsed.value = parseFloat(cMatch[1]);
-        if (bMatch) parsed.baseline_mean = parseFloat(bMatch[1]);
-      }
-      if (typeof parsed.value === 'number' && parsed.baseline_mean && parsed.baseline_mean > 0) {
-        parsed.delta_from_baseline_pct =
-          Math.round(((parsed.value - parsed.baseline_mean) / parsed.baseline_mean) * 1000) / 10;
-      }
-    }
+  if (parsed.unit === '/') parsed.unit = '/100';
+  if (parsed.unit === 'score_1_10') parsed.unit = 'score';
+  if (domain.domain_id === 'behavioral_psych' && (parsed.unit === '' || parsed.unit === '/')) {
+    parsed.unit = '/100';
+  }
+  if (domain.domain_id === 'sensorimotor_neuro' && (parsed.unit === '' || parsed.unit === 'score_1_10')) {
+    parsed.unit = 'score';
   }
 
-  // Also sync from active domain detail if matching domain
-  if (detail && detail.domain_id === domain.domain_id && detail.metrics?.[0]) {
-    const m = detail.metrics[0];
-    const validPts = (m.series || []).filter((p) => p.quality === 'VALID' && p.value !== null);
-    if (validPts.length > 0) {
-      const latest = validPts[validPts.length - 1];
-      if (latest.value !== null) {
-        parsed.value = latest.value;
+  // Sync active observation drift for ATTENTION domains or when delta is 0/null
+  if (domain.status === 'ATTENTION' || parsed.delta_from_baseline_pct === 0 || parsed.delta_from_baseline_pct === null) {
+    // 1. Sync from findings
+    if (findings && findings.length > 0) {
+      const specificFinding = findings.find((f) => {
+        const idMatch = f.finding_id?.toLowerCase().includes(domain.domain_id);
+        const singleDomain = f.involved_domains?.length === 1 && f.involved_domains[0] === domain.domain_id;
+        return idMatch || singleDomain;
+      });
+
+      const anyFindingWithMetric = findings.find((f) => {
+        return f.evidence?.supporting_metrics?.[domain.domain_id] !== undefined;
+      });
+
+      const relevantFinding = specificFinding || anyFindingWithMetric;
+
+      if (relevantFinding) {
+        const sm = relevantFinding.evidence?.supporting_metrics?.[domain.domain_id];
+        if (sm && typeof sm.current_value === 'number') {
+          parsed.value = sm.current_value;
+        }
+        if (relevantFinding.what_changed) {
+          const cMatch = relevantFinding.what_changed.match(/current:\s*([0-9.]+)/i);
+          const bMatch = relevantFinding.what_changed.match(/baseline(?:\s*mean)?:\s*([0-9.]+)/i);
+          if (cMatch) parsed.value = parseFloat(cMatch[1]);
+          if (bMatch) parsed.baseline_mean = parseFloat(bMatch[1]);
+        }
       }
     }
-    if (m.baseline?.mean) {
-      parsed.baseline_mean = m.baseline.mean;
+
+    // 2. Sync from status_reason
+    if (domain.status_reason) {
+      const cMatch = domain.status_reason.match(/current:\s*([0-9.]+)/i);
+      const bMatch = domain.status_reason.match(/baseline(?:\s*mean)?:\s*([0-9.]+)/i);
+      const droppedMatch = domain.status_reason.match(/(?:dropped|decreased|reduced)\s*(?:to\s*)?([0-9.]+)/i);
+      const elevatedMatch = domain.status_reason.match(/(?:elevated|increased|rose)\s*(?:to\s*)?([0-9.]+)/i);
+
+      if (cMatch) parsed.value = parseFloat(cMatch[1]);
+      else if (droppedMatch) parsed.value = parseFloat(droppedMatch[1]);
+      else if (elevatedMatch) parsed.value = parseFloat(elevatedMatch[1]);
+
+      if (bMatch) parsed.baseline_mean = parseFloat(bMatch[1]);
     }
+
+    // 3. Sync from detail if matching domain
+    if (detail && detail.domain_id === domain.domain_id && detail.metrics?.[0]) {
+      const m = detail.metrics[0];
+      const validPts = (m.series || []).filter((p) => p.quality === 'VALID' && p.value !== null);
+      if (validPts.length > 0) {
+        const latest = validPts[validPts.length - 1];
+        if (latest.value !== null) {
+          parsed.value = latest.value;
+        }
+      }
+      if (m.baseline?.mean) {
+        parsed.baseline_mean = m.baseline.mean;
+      }
+    }
+
+    // Recalculate delta_from_baseline_pct
     if (typeof parsed.value === 'number' && parsed.baseline_mean && parsed.baseline_mean > 0) {
       parsed.delta_from_baseline_pct =
         Math.round(((parsed.value - parsed.baseline_mean) / parsed.baseline_mean) * 1000) / 10;
@@ -337,7 +370,7 @@ export const DomainCard: React.FC<DomainCardProps> = ({
         cursor: 'pointer',
         transition: 'all 0.15s ease',
         position: 'relative',
-        minHeight: '88px',
+        minHeight: '100px',
         outline: isSelected ? '2px solid #38BDF8' : '1px solid #1E293B',
         boxShadow: isSelected ? '0 0 16px rgba(56, 189, 248, 0.25)' : 'none',
         zIndex: isSelected ? 2 : 1,
@@ -360,7 +393,7 @@ export const DomainCard: React.FC<DomainCardProps> = ({
 
       <div
         style={{
-          padding: '5px 8px 6px 8px',
+          padding: '8px 10px 10px 10px',
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
@@ -368,24 +401,24 @@ export const DomainCard: React.FC<DomainCardProps> = ({
           minWidth: 0,
         }}
       >
-        {/* Header Row: Locked Left Title + Tooltip, Locked Right Status Dot */}
+        {/* Header Row: Locked Left Title + Tooltip, Locked Right Status Dot (At least 12px) */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '4px',
-            marginBottom: '2px',
+            gap: '6px',
+            marginBottom: '4px',
             minWidth: 0,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '3px', minWidth: 0, overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0, overflow: 'hidden' }}>
             <span
               style={{
-                fontSize: '11px',
+                fontSize: '12px',
                 fontWeight: 800,
                 color: isSelected ? '#38BDF8' : '#F1F5F9',
-                letterSpacing: '0.03em',
+                letterSpacing: '0.04em',
                 textTransform: 'uppercase',
                 fontFamily: "'JetBrains Mono', monospace",
                 whiteSpace: 'nowrap',
@@ -397,7 +430,7 @@ export const DomainCard: React.FC<DomainCardProps> = ({
               {shortName}
             </span>
             <div className="tooltip-container" onClick={(e) => e.stopPropagation()}>
-              <Info size={10} color="#64748B" style={{ cursor: 'help', flexShrink: 0 }} />
+              <Info size={11} color="#64748B" style={{ cursor: 'help', flexShrink: 0 }} />
               <div className="tooltip-content">
                 <div style={{ fontWeight: 700, color: '#38BDF8', marginBottom: '2px' }}>
                   {domain.display_name} Scope Notice
@@ -407,13 +440,13 @@ export const DomainCard: React.FC<DomainCardProps> = ({
             </div>
           </div>
 
-          {/* Locked Status Badge on the right */}
+          {/* Locked Status Badge on the right (At least 12px) */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '3px',
-              fontSize: '10px',
+              gap: '4px',
+              fontSize: '12px',
               fontFamily: "'JetBrains Mono', monospace",
               fontWeight: 700,
               whiteSpace: 'nowrap',
@@ -440,7 +473,7 @@ export const DomainCard: React.FC<DomainCardProps> = ({
           </div>
         </div>
 
-        {/* Center: Large 28px Tabular Monospace Reading OR Insufficient Data Gap */}
+        {/* Center: Large Tabular Monospace Reading (text-3xl xl:text-4xl) OR Insufficient Data Gap */}
         {parsed === null ? (
           <div
             data-testid="insufficient-data-notice"
@@ -448,7 +481,7 @@ export const DomainCard: React.FC<DomainCardProps> = ({
               backgroundColor: '#07090F',
               border: '1px dashed #475569',
               borderRadius: '2px',
-              padding: '3px 6px',
+              padding: '6px 8px',
               margin: 'auto 0',
             }}
           >
@@ -456,22 +489,22 @@ export const DomainCard: React.FC<DomainCardProps> = ({
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '4px',
+                gap: '5px',
                 color: '#94A3B8',
-                fontSize: '10px',
+                fontSize: '12px',
                 fontWeight: 800,
                 fontFamily: "'JetBrains Mono', monospace",
-                marginBottom: '2px',
+                marginBottom: '3px',
               }}
             >
-              <AlertCircle size={11} color="#94A3B8" />
+              <AlertCircle size={13} color="#94A3B8" />
               SURVEILLANCE GAP DETECTED
             </div>
             <div
               style={{
-                fontSize: '9.5px',
+                fontSize: '12px',
                 color: '#CBD5E1',
-                lineHeight: '1.25',
+                lineHeight: '1.35',
                 fontStyle: 'italic',
                 whiteSpace: 'normal',
                 wordBreak: 'break-word',
@@ -491,16 +524,15 @@ export const DomainCard: React.FC<DomainCardProps> = ({
               minWidth: 0,
             }}
           >
-            {/* Primary Tabular Reading & Unit */}
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px' }}>
+            {/* Primary Tabular Reading & Unit (text-3xl xl:text-4xl font-semibold tabular-nums) */}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
               <span
                 data-testid="headline-value"
+                className="text-3xl xl:text-4xl font-semibold tabular-nums"
                 style={{
-                  fontSize: '28px',
-                  fontWeight: 700,
+                  fontSize: '32px',
                   color: isCritical ? '#EF4444' : isAttention ? '#FBBF24' : '#F8FAFC',
                   fontFamily: "'JetBrains Mono', monospace",
-                  fontVariantNumeric: 'tabular-nums',
                   lineHeight: '1.05',
                 }}
               >
@@ -510,7 +542,7 @@ export const DomainCard: React.FC<DomainCardProps> = ({
                 <span
                   data-testid="headline-unit"
                   style={{
-                    fontSize: '11.5px',
+                    fontSize: '13px',
                     color: '#94A3B8',
                     fontWeight: 600,
                     fontFamily: "'JetBrains Mono', monospace",
@@ -521,36 +553,36 @@ export const DomainCard: React.FC<DomainCardProps> = ({
               )}
             </div>
 
-            {/* Metric Label Line */}
+            {/* Metric Label Line (Minimum 12px, text-xs) */}
             <div
               data-testid="headline-label"
               style={{
                 color: '#94A3B8',
-                fontSize: '10.5px',
+                fontSize: '12px',
                 textTransform: 'uppercase',
                 fontWeight: 600,
-                letterSpacing: '0.02em',
+                letterSpacing: '0.03em',
                 fontFamily: "'JetBrains Mono', monospace",
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
-                marginTop: '1px',
+                marginTop: '2px',
               }}
               title={parsed.label}
             >
               {parsed.label}
             </div>
 
-            {/* Delta & Baseline Info Line */}
+            {/* Delta & Baseline Info Line (Minimum 12px, text-xs) */}
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '5px',
-                fontSize: '10px',
+                gap: '6px',
+                fontSize: '12px',
                 fontFamily: "'JetBrains Mono', monospace",
                 color: '#64748B',
-                marginTop: '1px',
+                marginTop: '2px',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
@@ -565,13 +597,13 @@ export const DomainCard: React.FC<DomainCardProps> = ({
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {parsed.delta_from_baseline_pct > 0 ? '+' : ''}
-                  {parsed.delta_from_baseline_pct}% vs baseline
+                  {parsed.delta_from_baseline_pct >= 0 ? '+' : ''}
+                  {parsed.delta_from_baseline_pct.toFixed(1)}% vs baseline
                 </span>
               )}
               {parsed.baseline_mean !== null && (
                 <>
-                  <span>·</span>
+                  <span style={{ color: '#475569' }}>·</span>
                   <span
                     data-testid="headline-baseline"
                     style={{ color: '#94A3B8', whiteSpace: 'nowrap' }}

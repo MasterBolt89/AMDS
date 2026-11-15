@@ -1,11 +1,13 @@
 import React from 'react';
-import { DomainSummary, DomainId } from '../types/api';
+import { DomainSummary, DomainId, Finding, DomainDetailResponse } from '../types/api';
 import { Wind, Info } from 'lucide-react';
 
 interface EclssStripProps {
   domain?: DomainSummary;
   isSelected?: boolean;
   onSelect: (domainId: DomainId) => void;
+  findings?: Finding[];
+  detail?: DomainDetailResponse | null;
 }
 
 const MicroSparkline: React.FC<{ points: number[]; color: string; width?: number; height?: number }> = ({
@@ -43,13 +45,61 @@ export const EclssStrip: React.FC<EclssStripProps> = ({
   domain,
   isSelected = false,
   onSelect,
+  findings,
+  detail,
 }) => {
   const isCritical = domain?.status === 'CRITICAL';
   const isAttention = domain?.status === 'ATTENTION';
 
-  // Environmental telemetry values
+  // Environmental telemetry values with live scenario binding
+  let liveCo2Val = 2.2;
+  if (detail && detail.domain_id === 'environment_eclss') {
+    const co2Metric = (detail as any).current_metrics?.find((m: any) => m.metric_name?.includes('co2'));
+    if (co2Metric && typeof co2Metric.value === 'number') {
+      liveCo2Val = co2Metric.value;
+    } else if (detail.metrics?.[0]?.series && detail.metrics[0].series.length > 0) {
+      const series = detail.metrics[0].series;
+      const last = series[series.length - 1];
+      if (last && typeof last.value === 'number') {
+        liveCo2Val = last.value;
+      }
+    }
+  } else if (typeof domain?.headline_metric === 'string') {
+    const match = domain.headline_metric.match(/([\d.]+)\s*mmHg/i);
+    if (match) {
+      liveCo2Val = parseFloat(match[1]);
+    }
+  } else if (domain?.headline_metric && typeof domain.headline_metric === 'object') {
+    const raw = domain.headline_metric as any;
+    if (typeof raw.value === 'number') {
+      liveCo2Val = raw.value;
+    }
+  } else if (findings && findings.length > 0) {
+    const eclssFinding = findings.find(
+      (f) =>
+        f.involved_domains?.includes('environment_eclss') ||
+        f.finding_id?.toLowerCase().includes('eclss')
+    );
+    if (eclssFinding) {
+      const match =
+        eclssFinding.what_changed?.match(/([\d.]+)\s*mmHg/i) ||
+        eclssFinding.title?.match(/([\d.]+)\s*mmHg/i);
+      if (match) {
+        liveCo2Val = parseFloat(match[1]);
+      } else if (isAttention) {
+        liveCo2Val = 3.8;
+      }
+    }
+  } else if (isAttention) {
+    liveCo2Val = 3.8;
+  }
+
+  if (isAttention && liveCo2Val < 3.0) {
+    liveCo2Val = 3.8;
+  }
+
   const ppO2 = isCritical ? '15.8 kPa' : '20.9 kPa';
-  const ppCO2 = isCritical ? '4.8 mmHg' : '2.8 mmHg';
+  const ppCO2 = `${liveCo2Val.toFixed(1)} mmHg`;
   const totalPressure = isCritical ? '89.2 kPa' : '101.3 kPa';
   const temperature = '21.5 °C';
   const humidity = '44.0%';
@@ -60,10 +110,14 @@ export const EclssStrip: React.FC<EclssStripProps> = ({
     : [20.8, 20.9, 20.9, 20.8, 20.9, 20.9];
   const o2Color = isCritical ? '#EF4444' : '#34D399';
 
+  const isCo2Elevated = liveCo2Val >= 3.0;
   const co2Points = isCritical
     ? [2.8, 3.2, 3.7, 4.1, 4.5, 4.8]
-    : [2.7, 2.8, 2.7, 2.8, 2.8, 2.8];
-  const co2Color = isCritical ? '#FBBF24' : '#38BDF8';
+    : isCo2Elevated
+    ? [2.1, 2.2, 2.3, 3.2, 3.6, liveCo2Val]
+    : [2.1, 2.2, 2.1, 2.2, 2.2, liveCo2Val];
+  const co2Color = isCritical ? '#EF4444' : isCo2Elevated ? '#FBBF24' : '#38BDF8';
+  const co2TextColor = isCritical ? '#EF4444' : isCo2Elevated ? '#FBBF24' : '#F8FAFC';
 
   const tempPoints = [21.4, 21.5, 21.4, 21.5, 21.6, 21.5];
   const tempColor = '#34D399';
@@ -180,7 +234,7 @@ export const EclssStrip: React.FC<EclssStripProps> = ({
               style={{
                 fontSize: '12.5px',
                 fontWeight: 800,
-                color: isCritical ? '#FBBF24' : '#F8FAFC',
+                color: co2TextColor,
                 fontFamily: "'JetBrains Mono', monospace",
                 fontVariantNumeric: 'tabular-nums',
                 lineHeight: '1.15',
