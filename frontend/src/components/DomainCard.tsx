@@ -115,7 +115,7 @@ export const METRIC_DICTIONARY: Record<
   },
   postural_instability_score: {
     label: 'Postural Sway Instability',
-    unit: 'score_1_10',
+    unit: 'score',
     nominalValue: 1.5,
     nominalBaseline: 1.5,
   },
@@ -149,9 +149,13 @@ export function parseHeadlineMetric(
       raw.metric_key || (typeof raw.name === 'string' && raw.name.includes('_') ? raw.name : undefined);
     const meta = metricKey ? METRIC_DICTIONARY[metricKey] : undefined;
 
+    let unit = raw.unit || meta?.unit || '';
+    if (unit === '/') unit = '/100';
+    if (unit === 'score_1_10') unit = 'score';
+
     parsed = {
       value: raw.value !== null && raw.value !== undefined ? raw.value : '—',
-      unit: raw.unit || meta?.unit || '',
+      unit,
       label: raw.label || raw.name || meta?.label || 'Headline Metric',
       metric_key: metricKey,
       delta_from_baseline_pct:
@@ -206,13 +210,15 @@ export function parseHeadlineMetric(
       };
     } else {
       const formattedMatch = text.match(
-        /^(?:([A-Za-z\s]+):\s*)?([0-9.]+)\s*([a-zA-Z/%]+)?(?:\s*\(Baseline:\s*([0-9.]+)[^,]*,\s*([+-]?[0-9.]+)%[^)]*\))?/i
+        /^(?:([A-Za-z\s]+):\s*)?([0-9.]+)\s*([a-zA-Z0-9_/%]+)?(?:\s*\(Baseline:\s*([0-9.]+)[^,]*,\s*([+-]?[0-9.]+)%[^)]*\))?/i
       );
 
       if (formattedMatch) {
         const customLabel = formattedMatch[1]?.trim();
         const numVal = parseFloat(formattedMatch[2]);
-        const unit = formattedMatch[3]?.trim() || '';
+        let unit = formattedMatch[3]?.trim() || '';
+        if (unit === '/') unit = '/100';
+        if (unit === 'score_1_10') unit = 'score';
         const baseline = formattedMatch[4] ? parseFloat(formattedMatch[4]) : null;
         const delta = formattedMatch[5] ? parseFloat(formattedMatch[5]) : null;
 
@@ -238,6 +244,15 @@ export function parseHeadlineMetric(
   }
 
   if (!parsed) return null;
+
+  if (parsed.unit === '/') parsed.unit = '/100';
+  if (parsed.unit === 'score_1_10') parsed.unit = 'score';
+  if (domain.domain_id === 'behavioral_psych' && (parsed.unit === '' || parsed.unit === '/')) {
+    parsed.unit = '/100';
+  }
+  if (domain.domain_id === 'sensorimotor_neuro' && (parsed.unit === '' || parsed.unit === 'score_1_10')) {
+    parsed.unit = 'score';
+  }
 
   // Sync active observation drift from findings if present and domain is ATTENTION or delta is 0
   if (findings && findings.length > 0) {
@@ -565,8 +580,8 @@ export const DomainCard: React.FC<DomainCardProps> = ({
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {parsed.delta_from_baseline_pct > 0 ? '+' : ''}
-                  {parsed.delta_from_baseline_pct}% vs baseline
+                  {parsed.delta_from_baseline_pct >= 0 ? '+' : ''}
+                  {parsed.delta_from_baseline_pct.toFixed(1)}% vs baseline
                 </span>
               )}
               {parsed.baseline_mean !== null && (

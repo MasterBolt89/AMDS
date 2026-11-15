@@ -192,5 +192,45 @@ describe('DomainCard Component & Headline Metric Parser', () => {
       expect(screen.getByTestId('headline-delta')).toHaveTextContent('+18.9% vs baseline');
       expect(screen.getByTestId('headline-baseline')).toHaveTextContent('Baseline: 63.07 bpm');
     });
+
+    it('renders baseline and delta on SENSOR card without unit mismatch', () => {
+      const domain: DomainSummary = {
+        domain_id: 'sensorimotor_neuro',
+        domain_category: 'PERSONAL_HEALTH',
+        display_name: 'Sensorimotor & Neurovestibular',
+        measurement_scope_notice: 'Postural balance screening.',
+        status: 'NORMAL',
+        completeness_pct: 100,
+        headline_metric: 'Postural Sway: 1.5 score (Baseline: 1.5 score, +0.0%)',
+        status_reason: 'Balance sway nominal',
+      };
+
+      render(<DomainCard domain={domain} onSelect={onSelectMock} />);
+
+      expect(screen.getByTestId('headline-value')).toHaveTextContent('1.5');
+      expect(screen.getByTestId('headline-unit')).toHaveTextContent('score');
+      expect(screen.getByTestId('headline-delta')).toHaveTextContent('+0.0% vs baseline');
+      expect(screen.getByTestId('headline-baseline')).toHaveTextContent(/Baseline:\s*1\.50?\s*score/);
+    });
+
+    it('renders full /100 unit on BEHAVIOR card without dangling slash', () => {
+      const domain: DomainSummary = {
+        domain_id: 'behavioral_psych',
+        domain_category: 'PERSONAL_HEALTH',
+        display_name: 'Behavioral Health & Psychology',
+        measurement_scope_notice: 'Cognitive fatigue surveillance.',
+        status: 'NORMAL',
+        completeness_pct: 100,
+        headline_metric: 'Cognitive Fatigue: 15.0 /100 (Baseline: 14.93 /100, +0.5%)',
+        status_reason: 'Alertness within nominal range',
+      };
+
+      render(<DomainCard domain={domain} onSelect={onSelectMock} />);
+
+      expect(screen.getByTestId('headline-value')).toHaveTextContent('15');
+      expect(screen.getByTestId('headline-unit')).toHaveTextContent('/100');
+      expect(screen.getByTestId('headline-delta')).toHaveTextContent('+0.5% vs baseline');
+      expect(screen.getByTestId('headline-baseline')).toHaveTextContent('Baseline: 14.93 /100');
+    });
   });
 });

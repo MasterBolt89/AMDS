@@ -177,8 +177,13 @@ export const App: React.FC = () => {
         setActiveScenarioId(dash.data_provenance_summary.scenario_id);
       }
 
-      // Preload active domain telemetry for bottom chart (auto-select domain in ATTENTION/CRITICAL)
-      const attentionDom = dash.domains?.find((d) => d.status === 'ATTENTION' || d.status === 'CRITICAL');
+      // Preload active domain telemetry for bottom chart:
+      // Default to cardiovascular (resting_hr_bpm) when nominal, or auto-select first ATTENTION/CRITICAL domain
+      const currentSc = dash.data_provenance_summary?.scenario_id || activeScenarioId;
+      const attentionDom =
+        currentSc === 'nominal_iss_baseline'
+          ? undefined
+          : dash.domains?.find((d) => d.status === 'ATTENTION' || d.status === 'CRITICAL');
       const initialDomain: DomainId = attentionDom ? attentionDom.domain_id : 'cardiovascular';
       setSelectedDomainId(initialDomain);
       try {
@@ -224,7 +229,14 @@ export const App: React.FC = () => {
       const updatedDash = await apiClient.getDashboard(astronautId);
       setDashboard(updatedDash);
 
-      const updatedDetail = await apiClient.getDomainDetail(astronautId, selectedDomainId);
+      const attentionDom =
+        activeScenarioId === 'nominal_iss_baseline'
+          ? undefined
+          : updatedDash.domains?.find((d) => d.status === 'ATTENTION' || d.status === 'CRITICAL');
+      const targetDomain: DomainId = attentionDom ? attentionDom.domain_id : 'cardiovascular';
+      setSelectedDomainId(targetDomain);
+
+      const updatedDetail = await apiClient.getDomainDetail(astronautId, targetDomain);
       setActiveDomainDetail(updatedDetail);
 
       showToast(`Switched crew profile to ${updatedDash.astronaut.callsign} (${astronautId})`);
@@ -242,8 +254,11 @@ export const App: React.FC = () => {
       setActiveScenarioId(scenarioId);
       setDashboard(updatedDash);
 
-      // Auto-select domain in ATTENTION/CRITICAL for the new scenario, or default to cardiovascular
-      const attentionDom = updatedDash.domains?.find((d) => d.status === 'ATTENTION' || d.status === 'CRITICAL');
+      // Auto-select domain in ATTENTION/CRITICAL for the new scenario, or default to cardiovascular when nominal
+      const attentionDom =
+        scenarioId === 'nominal_iss_baseline'
+          ? undefined
+          : updatedDash.domains?.find((d) => d.status === 'ATTENTION' || d.status === 'CRITICAL');
       const targetDomain: DomainId = attentionDom ? attentionDom.domain_id : 'cardiovascular';
       setSelectedDomainId(targetDomain);
 

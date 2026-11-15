@@ -160,7 +160,7 @@ function buildDomainSummaries(scenarioId: string) {
       status: 'NORMAL' as const,
       completeness_pct: 95,
       last_updated: '2026-11-13T19:00:00Z',
-      headline_metric: 'Stability: 1.5 score_1_10 (Baseline: 1.5 score_1_10, 0.0%)',
+      headline_metric: 'Postural Sway: 1.5 score (Baseline: 1.5 score, +0.0%)',
       status_reason: 'Neurovestibular dynamic tracking nominal',
       active_finding_count: 0,
     },
@@ -685,7 +685,7 @@ export function buildDomainDetailsForScenario(scenarioId: string): Record<Domain
       metrics: [
         {
           metric_name: 'postural_instability_score',
-          unit: 'score_1_10',
+          unit: 'score',
           modality: 'SUBJECTIVE_REPORT',
           baseline: {
             window_label: 'Pre-flight baseline',
@@ -695,7 +695,7 @@ export function buildDomainDetailsForScenario(scenarioId: string): Record<Domain
             sample_count: 14,
             reference_range_min: 1.0,
             reference_range_max: 3.0,
-            unit: 'score_1_10',
+            unit: 'score',
           },
           series: [
             { timestamp: '2026-11-08T10:30:00Z', mission_day: refDay - 6, value: 1.5, quality: 'VALID', provenance: 'SIMULATED' },
