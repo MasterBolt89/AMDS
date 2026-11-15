@@ -19,9 +19,10 @@ import {
 
 // Environment variable configuration
 // VITE_USE_MOCK defaults to true when unset or not explicitly 'false'
-const rawUseMock = import.meta.env.VITE_USE_MOCK;
+const metaEnv = typeof import.meta !== 'undefined' && (import.meta as any).env ? (import.meta as any).env : {};
+const rawUseMock = metaEnv.VITE_USE_MOCK;
 export const USE_MOCK: boolean = rawUseMock === undefined || rawUseMock === '' || rawUseMock === 'true';
-export const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+export const API_BASE_URL: string = metaEnv.VITE_API_BASE_URL || 'http://localhost:8000';
 
 /**
  * Stateful In-Memory Mock Adapter
@@ -125,25 +126,33 @@ class StatefulMockAdapter {
         // Update domain summary in dashboard
         const domSummary = this.dashboard.domains.find((d) => d.domain_id === item.domain_id);
         if (domSummary) {
+          const deltaPct = metric.baseline.mean
+            ? Math.round(((item.value - metric.baseline.mean) / metric.baseline.mean) * 1000) / 10
+            : 0;
+
           if (!domSummary.headline_metric) {
             domSummary.headline_metric = {
               name: metric.name,
               value: item.value,
               unit: item.unit,
               baseline_mean: metric.baseline.mean,
-              delta_from_baseline_pct: 0,
+              delta_from_baseline_pct: deltaPct,
               quality: item.quality,
             };
           } else {
             domSummary.headline_metric.value = item.value;
             domSummary.headline_metric.quality = item.quality;
+            domSummary.headline_metric.delta_from_baseline_pct = deltaPct;
           }
-          domSummary.completeness_pct = Math.min(100, domSummary.completeness_pct + 25);
+          domSummary.completeness_pct = 100;
+          domSummary.last_updated = item.timestamp;
+
           if (domSummary.status === 'INSUFFICIENT_DATA') {
             domSummary.status = 'NORMAL';
             domSummary.status_reason = null;
             domainDetail.status = 'NORMAL';
             domainDetail.status_reason = null;
+            domainDetail.cadence_policy.last_sample_elapsed_days = 0.0;
           }
         }
         updatedMetrics.push(item.metric_id);

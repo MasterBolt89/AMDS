@@ -1,15 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { DomainDetailResponse, MetricDetail } from '../types/api';
 import { StatusBadge, QualityBadge } from './StatusBadge';
 import { getDomainIcon } from './DomainCard';
 import {
   ArrowLeft,
-  Calendar,
   AlertTriangle,
   Info,
-  Clock,
   Activity,
   PlusCircle,
+  Sliders,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -37,23 +36,106 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
   const [selectedMetricId, setSelectedMetricId] = useState<string>(
     detail.metrics[0]?.id || ''
   );
+  const [includeSuspectOutliers, setIncludeSuspectOutliers] = useState<boolean>(false);
 
-  const selectedMetric: MetricDetail | undefined = detail.metrics.find(
-    (m) => m.id === selectedMetricId
-  ) || detail.metrics[0];
+  const selectedMetric: MetricDetail | undefined =
+    detail.metrics.find((m) => m.id === selectedMetricId) || detail.metrics[0];
 
-  // Prepare chart series: filter according to time range if needed
-  const chartData = (selectedMetric?.series || []).map((pt) => ({
-    timestamp: pt.timestamp,
-    mission_day: `Day ${pt.mission_day}`,
-    raw_day: pt.mission_day,
-    // Keep null for missing so line breaks and doesn't plot zero
-    value: pt.value,
-    quality: pt.quality,
-    note: pt.note,
-    provenance: pt.provenance,
-    modality: pt.modality,
-  }));
+  // Determine maximum mission day in dataset for relative time-window filtering
+  const allDays = (selectedMetric?.series || []).map((s) => s.mission_day);
+  const maxMissionDay = allDays.length > 0 ? Math.max(...allDays) : 84;
+
+  // Filter series according to selected timeRange
+  const filteredSeries = useMemo(() => {
+    if (!selectedMetric?.series) return [];
+    if (timeRange === '7d') {
+      return selectedMetric.series.filter((s) => s.mission_day >= maxMissionDay - 7);
+    }
+    if (timeRange === '30d') {
+      return selectedMetric.series.filter((s) => s.mission_day >= maxMissionDay - 30);
+    }
+    return selectedMetric.series;
+  }, [selectedMetric, timeRange, maxMissionDay]);
+
+  // Calculate Y-axis domain boundaries strictly adhering to clinical baseline and valid points
+  const { yMin, yMax, hasSuspectOutlier } = useMemo(() => {
+    if (!selectedMetric) {
+      return { yMin: 0, yMax: 100, hasSuspectOutlier: false };
+    }
+
+    const baseline = selectedMetric.baseline;
+    const baseMean = baseline.mean;
+    const baseStdDev = baseline.std_dev;
+    const baseMin2Sigma = baseMean - 2 * baseStdDev;
+    const baseMax2Sigma = baseMean + 2 * baseStdDev;
+
+    const validValues = filteredSeries
+      .filter((pt) => pt.quality === 'VALID' && pt.value !== null)
+      .map((pt) => pt.value as number);
+
+    const suspectValues = filteredSeries
+      .filter((pt) => pt.quality === 'SUSPECT' && pt.value !== null)
+      .map((pt) => pt.value as number);
+
+    const hasOutlier = suspectValues.length > 0;
+
+    if (includeSuspectOutliers) {
+      // Scale includes suspect outliers (e.g. 142.0 bpm post-exercise artifact)
+      const allValues = filteredSeries
+        .filter((pt) => pt.value !== null)
+        .map((pt) => pt.value as number);
+
+      const minVal = allValues.length > 0 ? Math.min(...allValues, baseMin2Sigma) : baseMin2Sigma;
+      const maxVal = allValues.length > 0 ? Math.max(...allValues, baseMax2Sigma) : baseMax2Sigma;
+      const padding = (maxVal - minVal) * 0.15 || 5;
+
+      return {
+        yMin: Math.floor(minVal - padding),
+        yMax: Math.ceil(maxVal + padding),
+        hasSuspectOutlier: hasOutlier,
+      };
+    } else {
+      // Default scale: Strictly calculated from VALID points and baseline.mean ± 2*std_dev (~15% padding)
+      const minVal = validValues.length > 0 ? Math.min(...validValues, baseMin2Sigma) : baseMin2Sigma;
+      const maxVal = validValues.length > 0 ? Math.max(...validValues, baseMax2Sigma) : baseMax2Sigma;
+      const span = maxVal - minVal || 10;
+      const padding = span * 0.15;
+
+      return {
+        yMin: Math.floor(minVal - padding),
+        yMax: Math.ceil(maxVal + padding),
+        hasSuspectOutlier: hasOutlier,
+      };
+    }
+  }, [selectedMetric, filteredSeries, includeSuspectOutliers]);
+
+  // Prepare chart series:
+  // - value: original raw value (or null for MISSING)
+  // - plotValue: if suspect outlier exceeds yMax and includeSuspectOutliers is false, pin to yMax for visibility
+  const chartData = useMemo(() => {
+    return filteredSeries.map((pt) => {
+      let plotVal = pt.value;
+      let isCappedOutlier = false;
+
+      if (!includeSuspectOutliers && pt.quality === 'SUSPECT' && pt.value !== null && pt.value > yMax) {
+        plotVal = yMax;
+        isCappedOutlier = true;
+      }
+
+      return {
+        timestamp: pt.timestamp,
+        mission_day: `Day ${pt.mission_day}`,
+        raw_day: pt.mission_day,
+        value: pt.value,
+        plotValue: plotVal,
+        isCappedOutlier,
+        quality: pt.quality,
+        note: pt.note,
+        provenance: pt.provenance,
+        modality: pt.modality,
+      };
+    });
+  }, [filteredSeries, includeSuspectOutliers, yMax]);
 
   const isInsufficient = detail.status === 'INSUFFICIENT_DATA';
 
@@ -238,7 +320,7 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
         </div>
       </div>
 
-      {/* Metrics Selector & Time Range Controls */}
+      {/* Metrics Selector, Outlier Toggle & Time Range Controls */}
       <div
         style={{
           display: 'flex',
@@ -272,37 +354,69 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
           ))}
         </div>
 
-        {/* Time-Range Switcher */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            backgroundColor: '#0D1320',
-            border: '1px solid #1F2937',
-            borderRadius: '4px',
-            padding: '2px',
-          }}
-        >
-          {(['7d', '30d', 'mission'] as const).map((range) => (
-            <button
-              key={range}
-              onClick={() => setTimeRange(range)}
+        {/* Chart Controls: Suspect Outlier Toggle + Time Range */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px' }}>
+          {hasSuspectOutlier && (
+            <label
               style={{
-                backgroundColor: timeRange === range ? '#0284C7' : 'transparent',
-                color: timeRange === range ? '#FFFFFF' : '#94A3B8',
-                border: 'none',
-                borderRadius: '3px',
-                padding: '4px 10px',
-                fontSize: '11px',
-                fontWeight: 600,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
                 cursor: 'pointer',
+                fontSize: '11px',
+                color: includeSuspectOutliers ? '#F59E0B' : '#94A3B8',
+                backgroundColor: includeSuspectOutliers ? '#451A03' : '#0D1320',
+                border: `1px solid ${includeSuspectOutliers ? '#D97706' : '#1F2937'}`,
+                padding: '5px 10px',
+                borderRadius: '4px',
                 fontFamily: "'JetBrains Mono', monospace",
-                textTransform: 'uppercase',
+                userSelect: 'none',
               }}
+              title="Toggle to expand Y-axis scale to include acute motion artifacts or outliers without compressing baseline trend by default"
             >
-              {range}
-            </button>
-          ))}
+              <Sliders size={13} color={includeSuspectOutliers ? '#F59E0B' : '#64748B'} />
+              <input
+                type="checkbox"
+                checked={includeSuspectOutliers}
+                onChange={(e) => setIncludeSuspectOutliers(e.target.checked)}
+                style={{ cursor: 'pointer', accentColor: '#F59E0B' }}
+              />
+              <span>Include Suspect Outliers in Axis Scale</span>
+            </label>
+          )}
+
+          {/* Time-Range Switcher */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              backgroundColor: '#0D1320',
+              border: '1px solid #1F2937',
+              borderRadius: '4px',
+              padding: '2px',
+            }}
+          >
+            {(['7d', '30d', 'mission'] as const).map((range) => (
+              <button
+                key={range}
+                onClick={() => setTimeRange(range)}
+                style={{
+                  backgroundColor: timeRange === range ? '#0284C7' : 'transparent',
+                  color: timeRange === range ? '#FFFFFF' : '#94A3B8',
+                  border: 'none',
+                  borderRadius: '3px',
+                  padding: '4px 10px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: "'JetBrains Mono', monospace",
+                  textTransform: 'uppercase',
+                }}
+              >
+                {range}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -312,24 +426,43 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
           <div
             style={{
               display: 'flex',
+              flexWrap: 'wrap',
               justifyContent: 'space-between',
               alignItems: 'center',
+              gap: '10px',
               marginBottom: '16px',
             }}
           >
             <div>
               <div style={{ fontSize: '14px', fontWeight: 700, color: '#F8FAFC' }}>
-                {selectedMetric.name} Telemetry Trend
+                {selectedMetric.name} Telemetry Trend ({timeRange.toUpperCase()})
               </div>
               <div style={{ fontSize: '11px', color: '#64748B', fontFamily: "'JetBrains Mono', monospace" }}>
                 Baseline Mean: {selectedMetric.baseline.mean} {selectedMetric.baseline.unit} (Ref Range:{' '}
                 {selectedMetric.baseline.reference_range_min} - {selectedMetric.baseline.reference_range_max}{' '}
-                {selectedMetric.baseline.unit})
+                {selectedMetric.baseline.unit}) • Y-Scale: [{yMin}, {yMax} {selectedMetric.unit}]
               </div>
             </div>
 
-            <div style={{ fontSize: '11px', color: '#94A3B8' }}>
-              Modality: <strong style={{ color: '#E2E8F0' }}>{selectedMetric.modality}</strong>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {hasSuspectOutlier && !includeSuspectOutliers && (
+                <span
+                  style={{
+                    fontSize: '11px',
+                    color: '#FCD34D',
+                    backgroundColor: '#451A03',
+                    border: '1px solid #78350F',
+                    padding: '2px 8px',
+                    borderRadius: '3px',
+                    fontFamily: "'JetBrains Mono', monospace",
+                  }}
+                >
+                  ⚠️ 1 Suspect Outlier Pinned to Ceiling (Uncompressed Scale)
+                </span>
+              )}
+              <div style={{ fontSize: '11px', color: '#94A3B8' }}>
+                Modality: <strong style={{ color: '#E2E8F0' }}>{selectedMetric.modality}</strong>
+              </div>
             </div>
           </div>
 
@@ -337,7 +470,7 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
             className="aero-well"
             style={{
               padding: '16px 8px 8px 0',
-              height: '320px',
+              height: '340px',
               position: 'relative',
             }}
           >
@@ -356,7 +489,7 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData} margin={{ top: 10, right: 30, left: 10, bottom: 10 }}>
+                <LineChart data={chartData} margin={{ top: 15, right: 30, left: 10, bottom: 10 }}>
                   <CartesianGrid stroke="#1F2937" strokeDasharray="3 3" />
                   <XAxis
                     dataKey="mission_day"
@@ -365,7 +498,8 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
                   />
                   <YAxis
                     stroke="#64748B"
-                    domain={['auto', 'auto']}
+                    domain={[yMin, yMax]}
+                    allowDataOverflow={true}
                     tick={{ fill: '#94A3B8', fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}
                     unit={` ${selectedMetric.unit}`}
                   />
@@ -373,15 +507,19 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
                     content={({ active, payload }) => {
                       if (!active || !payload || !payload.length) return null;
                       const data = payload[0].payload;
+                      const isSuspect = data.quality === 'SUSPECT';
+                      const isMissing = data.quality === 'MISSING' || data.value === null;
+
                       return (
                         <div
                           style={{
                             backgroundColor: '#0A0F1D',
-                            border: '1px solid #334155',
+                            border: `1px solid ${isSuspect ? '#D97706' : isMissing ? '#64748B' : '#334155'}`,
                             borderRadius: '4px',
                             padding: '10px 12px',
                             fontSize: '12px',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.6)',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.7)',
+                            maxWidth: '300px',
                           }}
                         >
                           <div
@@ -395,22 +533,43 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
                             {data.mission_day} ({data.timestamp.slice(0, 10)})
                           </div>
                           <div style={{ marginBottom: '4px' }}>
-                            Value:{' '}
-                            <strong style={{ color: '#F8FAFC', fontFamily: "'JetBrains Mono', monospace" }}>
-                              {data.value !== null ? `${data.value} ${selectedMetric.unit}` : 'MISSING (NULL)'}
+                            Measured Value:{' '}
+                            <strong
+                              style={{
+                                color: isMissing ? '#94A3B8' : isSuspect ? '#FBBF24' : '#F8FAFC',
+                                fontFamily: "'JetBrains Mono', monospace",
+                              }}
+                            >
+                              {data.value !== null ? `${data.value} ${selectedMetric.unit}` : 'MISSING (NULL GAP)'}
                             </strong>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                            Quality: <QualityBadge quality={data.quality} />
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                            <span>Data Quality:</span>
+                            <QualityBadge quality={data.quality} />
                           </div>
+
+                          {data.isCappedOutlier && (
+                            <div
+                              style={{
+                                color: '#FCD34D',
+                                fontSize: '11px',
+                                marginBottom: '4px',
+                                fontFamily: "'JetBrains Mono', monospace",
+                              }}
+                            >
+                              ▲ Value ({data.value} {selectedMetric.unit}) exceeds default trend scale [{yMin}-{yMax}].
+                              Toggle switch above chart to scale axis.
+                            </div>
+                          )}
+
                           {data.note && (
                             <div
                               style={{
-                                color: data.quality === 'SUSPECT' ? '#FCD34D' : '#94A3B8',
+                                color: isSuspect ? '#FDE68A' : '#94A3B8',
                                 fontSize: '11px',
                                 marginTop: '4px',
-                                maxWidth: '240px',
                                 fontStyle: 'italic',
+                                lineHeight: '1.35',
                               }}
                             >
                               Note: {data.note}
@@ -426,34 +585,54 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
                     stroke="#0284C7"
                     strokeDasharray="4 4"
                     label={{
-                      value: `Baseline (${selectedMetric.baseline.mean})`,
+                      value: `Baseline Mean (${selectedMetric.baseline.mean})`,
                       fill: '#38BDF8',
                       fontSize: 10,
                       position: 'insideTopRight',
                     }}
                   />
+                  {/* Line strictly enforcing connectNulls={false} so MISSING breaks the line cleanly */}
                   <Line
                     type="monotone"
-                    dataKey="value"
+                    dataKey="plotValue"
                     stroke="#38BDF8"
                     strokeWidth={2}
                     connectNulls={false}
                     dot={(props: any) => {
                       const { cx, cy, payload } = props;
-                      if (payload.value === null) return null;
+                      if (payload.plotValue === null || payload.value === null) return null;
+
                       if (payload.quality === 'SUSPECT') {
+                        const isPinned = payload.isCappedOutlier;
                         return (
-                          <circle
-                            key={`dot-${props.index}`}
-                            cx={cx}
-                            cy={cy}
-                            r={6}
-                            fill="#F59E0B"
-                            stroke="#78350F"
-                            strokeWidth={2}
-                          />
+                          <g key={`dot-${props.index}`} style={{ cursor: 'pointer' }}>
+                            <circle
+                              cx={cx}
+                              cy={cy}
+                              r={isPinned ? 8 : 7}
+                              fill="#78350F"
+                              stroke="#F59E0B"
+                              strokeWidth={2}
+                            />
+                            {isPinned ? (
+                              <text
+                                x={cx}
+                                y={cy + 3.5}
+                                textAnchor="middle"
+                                fill="#FEF08A"
+                                fontSize="9"
+                                fontWeight="bold"
+                                fontFamily="'JetBrains Mono', monospace"
+                              >
+                                ▲
+                              </text>
+                            ) : (
+                              <circle cx={cx} cy={cy} r={3} fill="#FEF08A" />
+                            )}
+                          </g>
                         );
                       }
+
                       return (
                         <circle
                           key={`dot-${props.index}`}
@@ -490,7 +669,7 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Activity size={16} color="#38BDF8" />
               <h3 style={{ margin: 0, fontSize: '14px', color: '#F8FAFC' }}>
-                TELEMETRIC TIME-SERIES LEDGER ({selectedMetric.series.length} ENTRIES)
+                TELEMETRIC TIME-SERIES LEDGER ({filteredSeries.length} ENTRIES)
               </h3>
             </div>
             <div style={{ fontSize: '11px', color: '#64748B', fontFamily: "'JetBrains Mono', monospace" }}>
@@ -519,7 +698,7 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
                 </tr>
               </thead>
               <tbody>
-                {selectedMetric.series.map((pt, idx) => (
+                {filteredSeries.map((pt, idx) => (
                   <tr
                     key={idx}
                     style={{
