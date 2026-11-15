@@ -49,7 +49,6 @@ export const App: React.FC = () => {
     }, 4000);
   };
 
-  // Dynamic Astronaut Initialization & Scenario Population on mount
   const initializeApp = async () => {
     setLoading(true);
     setError(null);
@@ -200,8 +199,8 @@ export const App: React.FC = () => {
           fontFamily: "'JetBrains Mono', monospace",
         }}
       >
-        <Activity size={32} className="animate-spin" />
-        <div style={{ marginTop: '16px', fontSize: '13px', letterSpacing: '0.08em' }}>
+        <Activity size={28} className="animate-spin" />
+        <div style={{ marginTop: '12px', fontSize: '12px', letterSpacing: '0.08em' }}>
           INITIALIZING NASA FLIGHT-SURGEON COMMAND CONSOLE...
         </div>
       </div>
@@ -220,14 +219,14 @@ export const App: React.FC = () => {
           backgroundColor: '#080B12',
           color: '#EF4444',
           fontFamily: "'JetBrains Mono', monospace",
-          padding: '24px',
+          padding: '20px',
           textAlign: 'center',
         }}
       >
-        <div style={{ fontSize: '16px', fontWeight: 800, marginBottom: '8px' }}>
+        <div style={{ fontSize: '15px', fontWeight: 800, marginBottom: '6px' }}>
           COMMAND CONSOLE CONNECTION ERROR
         </div>
-        <div style={{ fontSize: '12px', color: '#CBD5E1', marginBottom: '16px' }}>{error}</div>
+        <div style={{ fontSize: '12px', color: '#CBD5E1', marginBottom: '14px' }}>{error}</div>
         <button className="aero-btn aero-btn-primary" onClick={initializeApp}>
           Retry Connection
         </button>
@@ -250,28 +249,28 @@ export const App: React.FC = () => {
         <div
           style={{
             position: 'fixed',
-            bottom: '20px',
-            right: '20px',
+            bottom: '16px',
+            right: '16px',
             backgroundColor: '#064E3B',
             border: '1px solid #059669',
             color: '#D1FAE5',
-            padding: '10px 16px',
+            padding: '8px 14px',
             borderRadius: '2px',
             boxShadow: '0 8px 24px rgba(0,0,0,0.8)',
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            fontSize: '12px',
+            fontSize: '11px',
             fontFamily: "'JetBrains Mono', monospace",
             zIndex: 2000,
           }}
         >
-          <CheckCircle2 size={15} color="#34D399" />
+          <CheckCircle2 size={14} color="#34D399" />
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* Persistent Mission Telemetry Header */}
+      {/* Persistent Mission Telemetry Header (Compact py-2) */}
       <Header
         dashboard={dashboard}
         scenarios={scenarios}
@@ -298,12 +297,12 @@ export const App: React.FC = () => {
       ) : (
         <main
           style={{
-            padding: '16px 20px',
+            padding: '10px 14px',
             maxWidth: '1600px',
             margin: '0 auto',
             display: 'grid',
             gridTemplateColumns: 'minmax(0, 62%) minmax(0, 38%)',
-            gap: '16px',
+            gap: '12px',
             alignItems: 'start',
           }}
         >
@@ -317,16 +316,16 @@ export const App: React.FC = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                marginBottom: '10px',
+                marginBottom: '6px',
                 borderBottom: '1px solid #1E293B',
-                paddingBottom: '6px',
+                paddingBottom: '4px',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <ShieldCheck size={16} color="#38BDF8" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <ShieldCheck size={14} color="#38BDF8" />
                 <h2
                   style={{
-                    fontSize: '12px',
+                    fontSize: '11px',
                     fontWeight: 800,
                     margin: 0,
                     letterSpacing: '0.04em',
@@ -340,22 +339,25 @@ export const App: React.FC = () => {
               </div>
               <div
                 style={{
-                  fontSize: '9px',
+                  fontSize: '8.5px',
                   color: '#64748B',
                   fontFamily: "'JetBrains Mono', monospace",
+                  textTransform: 'uppercase',
                 }}
               >
-                2×4 HAIRLINE GRID · CLICK TILE TO STREAM TELEMETRY
+                2×4 FLUSH HAIRLINE INSTRUMENT GRID
               </div>
             </div>
 
-            {/* 1. Top 2x4 Hairline Grid (8 Personal Domains) */}
+            {/* 1. Top 2x4 True Flush Hairline Grid (gap-0, shared 1px #1E293B border) */}
             <div
               style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-                gap: '8px',
-                marginBottom: '14px',
+                backgroundColor: '#1E293B',
+                gap: '1px',
+                border: '1px solid #1E293B',
+                marginBottom: '10px',
               }}
             >
               {personalDomains.map((dom) => (
@@ -368,14 +370,14 @@ export const App: React.FC = () => {
               ))}
             </div>
 
-            {/* 2. Middle Full-Width ENVIRONMENT_ECLSS Strip */}
+            {/* 2. Middle Full-Width ENVIRONMENT_ECLSS Strip (Sky Cobalt Header + Sparklines) */}
             <EclssStrip
               domain={environmentalDomains[0]}
               isSelected={selectedDomainId === 'environment_eclss'}
               onSelect={handleSelectDomain}
             />
 
-            {/* 3. Bottom Embedded Live Telemetry Graph */}
+            {/* 3. Bottom Embedded Live Telemetry Graph (min-h-[210px], Above-the-Fold) */}
             <EmbeddedTelemetryChart
               detail={activeDomainDetail}
               summary={activeSummary}

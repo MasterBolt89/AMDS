@@ -1,6 +1,5 @@
 import React from 'react';
 import { DomainSummary, DomainId, DataQuality } from '../types/api';
-import { StatusBadge, QualityBadge } from './StatusBadge';
 import {
   Heart,
   Moon,
@@ -12,7 +11,6 @@ import {
   Eye,
   Utensils,
   AlertCircle,
-  Clock,
   Info,
 } from 'lucide-react';
 
@@ -22,7 +20,7 @@ interface DomainCardProps {
   onSelect: (domainId: DomainId) => void;
 }
 
-export const getDomainIcon = (domainId: DomainId, size: number = 14) => {
+export const getDomainIcon = (domainId: DomainId, size: number = 13) => {
   switch (domainId) {
     case 'cardiovascular':
       return <Heart size={size} color="#F87171" />;
@@ -43,6 +41,18 @@ export const getDomainIcon = (domainId: DomainId, size: number = 14) => {
     case 'environment_eclss':
       return <Wind size={size} color="#2DD4BF" />;
   }
+};
+
+export const DOMAIN_SHORT_NAMES: Record<string, string> = {
+  cardiovascular: 'CARDIOVASCULAR',
+  sleep_circadian: 'SLEEP & CIRCADIAN',
+  behavioral_psych: 'BEHAVIORAL PSYCH',
+  musculoskeletal: 'MUSCULOSKELETAL',
+  immune_microbio: 'IMMUNE MICROBIO',
+  radiation: 'RADIATION',
+  sensorimotor_neuro: 'SENSORIMOTOR',
+  nutrition: 'NUTRITION',
+  environment_eclss: 'ECLSS ATMOSPHERE',
 };
 
 export interface ParsedHeadlineMetric {
@@ -217,18 +227,18 @@ export const DomainCard: React.FC<DomainCardProps> = ({ domain, isSelected = fal
   const isAttention = domain.status === 'ATTENTION';
   const isCritical = domain.status === 'CRITICAL';
 
-  // Determine top 3px accent bar color per Option 2 specification:
-  // Neuro/Radiation domains: Sky Cobalt (#38BDF8)
-  // Physiological domains: Bio-Mint Emerald (#34D399)
-  // Attention: Warm Amber (#FBBF24)
-  // Critical: Alert Red (#EF4444)
-  // Insufficient: Cool Slate (#64748B)
-  const isNeuroRadiation =
+  // Distinct 3px top accent bars:
+  // Bio-Mint (#34D399): cardiovascular, sleep_circadian, musculoskeletal, immune_microbio, nutrition
+  // Sky Cobalt (#38BDF8): behavioral_psych, radiation, sensorimotor_neuro
+  // Warm Amber (#FBBF24): Overrides top bar whenever status === "ATTENTION"
+  // Alert Red (#EF4444): status === "CRITICAL"
+  // Cool Slate (#64748B): status === "INSUFFICIENT_DATA"
+  const isSkyCobaltDomain =
     domain.domain_id === 'behavioral_psych' ||
     domain.domain_id === 'radiation' ||
     domain.domain_id === 'sensorimotor_neuro';
 
-  let accentBarColor = isNeuroRadiation ? '#38BDF8' : '#34D399';
+  let accentBarColor = isSkyCobaltDomain ? '#38BDF8' : '#34D399';
   if (isCritical) {
     accentBarColor = '#EF4444';
   } else if (isAttention) {
@@ -237,6 +247,7 @@ export const DomainCard: React.FC<DomainCardProps> = ({ domain, isSelected = fal
     accentBarColor = '#64748B';
   }
 
+  const shortName = DOMAIN_SHORT_NAMES[domain.domain_id] || domain.display_name;
   const parsed = parseHeadlineMetric(domain);
 
   return (
@@ -245,35 +256,26 @@ export const DomainCard: React.FC<DomainCardProps> = ({ domain, isSelected = fal
       onClick={() => onSelect(domain.domain_id)}
       style={{
         backgroundColor: isSelected ? '#111827' : '#0C101A',
-        border: isInsufficient
-          ? '1px dashed #475569'
-          : isSelected
-          ? `1px solid ${accentBarColor}`
-          : '1px solid #1E293B',
-        borderRadius: '2px',
+        borderRadius: '0px',
+        padding: 0,
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
         cursor: 'pointer',
-        transition: 'all 0.12s ease-in-out',
+        transition: 'background-color 0.12s ease',
         position: 'relative',
-        minHeight: '145px',
-        overflow: 'hidden',
+        minHeight: '100px',
+        outline: isSelected ? `1px solid ${accentBarColor}` : 'none',
+        zIndex: isSelected ? 2 : 1,
       }}
       onMouseEnter={(e) => {
-        if (!isSelected) {
-          e.currentTarget.style.backgroundColor = '#121826';
-          e.currentTarget.style.borderColor = '#334155';
-        }
+        if (!isSelected) e.currentTarget.style.backgroundColor = '#121826';
       }}
       onMouseLeave={(e) => {
-        if (!isSelected) {
-          e.currentTarget.style.backgroundColor = '#0C101A';
-          e.currentTarget.style.borderColor = isInsufficient ? '#475569' : '#1E293B';
-        }
+        if (!isSelected) e.currentTarget.style.backgroundColor = '#0C101A';
       }}
     >
-      {/* Top 3px Solid Accent Bar */}
+      {/* 3px Top Accent Bar */}
       <div
         style={{
           height: '3px',
@@ -282,31 +284,37 @@ export const DomainCard: React.FC<DomainCardProps> = ({ domain, isSelected = fal
         }}
       />
 
-      <div style={{ padding: '10px 12px 6px 12px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-        {/* Top Row: Short Domain Label + Scope Notice Tooltip on Left, Status Dot + Label on Right */}
+      <div style={{ padding: '7px 9px 4px 9px', flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        {/* Header Row: Locked Left Title + Tooltip, Locked Right Status Dot */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            marginBottom: '8px',
+            gap: '6px',
+            marginBottom: '3px',
+            minWidth: 0,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0, overflow: 'hidden' }}>
             <span
               style={{
-                fontSize: '11px',
+                fontSize: '10px',
                 fontWeight: 800,
                 color: isSelected ? '#38BDF8' : '#F1F5F9',
                 letterSpacing: '0.04em',
                 textTransform: 'uppercase',
                 fontFamily: "'JetBrains Mono', monospace",
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
               }}
+              title={domain.display_name}
             >
-              {domain.display_name.split('&')[0].replace('Health', '').trim()}
+              {shortName}
             </span>
             <div className="tooltip-container" onClick={(e) => e.stopPropagation()}>
-              <Info size={11} color="#64748B" style={{ cursor: 'help' }} />
+              <Info size={11} color="#64748B" style={{ cursor: 'help', flexShrink: 0 }} />
               <div className="tooltip-content">
                 <div style={{ fontWeight: 700, color: '#38BDF8', marginBottom: '2px' }}>
                   {domain.display_name} Scope Notice
@@ -316,15 +324,17 @@ export const DomainCard: React.FC<DomainCardProps> = ({ domain, isSelected = fal
             </div>
           </div>
 
-          {/* Status Dot + Pill */}
+          {/* Locked Status Badge on the right (whitespace-nowrap) */}
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '4px',
-              fontSize: '10px',
+              gap: '3px',
+              fontSize: '9px',
               fontFamily: "'JetBrains Mono', monospace",
               fontWeight: 700,
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
               color: isCritical
                 ? '#EF4444'
                 : isAttention
@@ -347,15 +357,15 @@ export const DomainCard: React.FC<DomainCardProps> = ({ domain, isSelected = fal
           </div>
         </div>
 
-        {/* Center: Monospace Reading OR Insufficient Data Gap Notice */}
+        {/* Center: Large 3XL Tabular Monospace Reading OR Insufficient Data Gap */}
         {parsed === null ? (
           <div
             data-testid="insufficient-data-notice"
             style={{
               backgroundColor: '#07090F',
               border: '1px dashed #475569',
-              borderRadius: '2px',
-              padding: '6px 8px',
+              borderRadius: '0px',
+              padding: '4px 6px',
               margin: 'auto 0',
             }}
           >
@@ -363,24 +373,28 @@ export const DomainCard: React.FC<DomainCardProps> = ({ domain, isSelected = fal
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '5px',
+                gap: '4px',
                 color: '#94A3B8',
-                fontSize: '10px',
+                fontSize: '9.5px',
                 fontWeight: 700,
                 fontFamily: "'JetBrains Mono', monospace",
-                marginBottom: '2px',
+                marginBottom: '1px',
               }}
             >
-              <AlertCircle size={11} color="#94A3B8" />
+              <AlertCircle size={10} color="#94A3B8" />
               SURVEILLANCE GAP DETECTED
             </div>
             <div
               style={{
-                fontSize: '10px',
+                fontSize: '9px',
                 color: '#CBD5E1',
-                lineHeight: '1.3',
+                lineHeight: '1.25',
                 fontStyle: 'italic',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
               }}
+              title={domain.status_reason || 'Biomarker assay overdue.'}
             >
               {domain.status_reason || 'Biomarker assay overdue.'}
             </div>
@@ -392,16 +406,16 @@ export const DomainCard: React.FC<DomainCardProps> = ({ domain, isSelected = fal
               margin: 'auto 0',
               display: 'flex',
               flexDirection: 'column',
-              justifyContent: 'center',
+              minWidth: 0,
             }}
           >
-            {/* Primary Tabular Reading & Unit */}
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+            {/* Primary Tabular Reading & Unit (Large text-3xl font-semibold tabular-nums) */}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px' }}>
               <span
                 data-testid="headline-value"
                 style={{
-                  fontSize: '22px',
-                  fontWeight: 800,
+                  fontSize: '26px',
+                  fontWeight: 700,
                   color: isCritical ? '#EF4444' : isAttention ? '#FBBF24' : '#F8FAFC',
                   fontFamily: "'JetBrains Mono', monospace",
                   fontVariantNumeric: 'tabular-nums',
@@ -423,73 +437,68 @@ export const DomainCard: React.FC<DomainCardProps> = ({ domain, isSelected = fal
                   {parsed.unit}
                 </span>
               )}
-              {parsed.delta_from_baseline_pct !== null && parsed.delta_from_baseline_pct !== undefined && (
-                <span
-                  data-testid="headline-delta"
-                  style={{
-                    fontSize: '10px',
-                    color:
-                      parsed.delta_from_baseline_pct > 0
-                        ? isAttention
-                          ? '#FBBF24'
-                          : '#34D399'
-                        : '#94A3B8',
-                    fontFamily: "'JetBrains Mono', monospace",
-                    marginLeft: 'auto',
-                    fontWeight: 700,
-                  }}
-                >
-                  {parsed.delta_from_baseline_pct > 0 ? '+' : ''}
-                  {parsed.delta_from_baseline_pct}% vs baseline
-                </span>
-              )}
             </div>
 
-            {/* Sub-label and Baseline */}
+            {/* Single Clean Line Secondary Metadata: RESTING HR · +0% vs baseline · Baseline: 60 bpm */}
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'space-between',
-                marginTop: '3px',
+                gap: '4px',
+                fontSize: '9.5px',
+                fontFamily: "'JetBrains Mono', monospace",
+                color: '#64748B',
+                marginTop: '2px',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
               }}
             >
               <span
                 data-testid="headline-label"
                 style={{
-                  fontSize: '9px',
-                  fontWeight: 600,
-                  color: '#64748B',
+                  color: '#94A3B8',
                   textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
-                  fontFamily: "'JetBrains Mono', monospace",
+                  fontWeight: 600,
+                  letterSpacing: '0.03em',
                 }}
               >
                 {parsed.label}
               </span>
+              {parsed.delta_from_baseline_pct !== null && (
+                <>
+                  <span>·</span>
+                  <span
+                    data-testid="headline-delta"
+                    style={{
+                      color: isAttention ? '#FBBF24' : '#34D399',
+                      fontWeight: 700,
+                    }}
+                  >
+                    {parsed.delta_from_baseline_pct > 0 ? '+' : ''}
+                    {parsed.delta_from_baseline_pct}% vs baseline
+                  </span>
+                </>
+              )}
               {parsed.baseline_mean !== null && (
-                <span
-                  data-testid="headline-baseline"
-                  style={{
-                    fontSize: '9px',
-                    color: '#64748B',
-                    fontFamily: "'JetBrains Mono', monospace",
-                  }}
-                >
-                  Baseline: {parsed.baseline_mean} {parsed.unit}
-                </span>
+                <>
+                  <span>·</span>
+                  <span data-testid="headline-baseline" style={{ color: '#64748B' }}>
+                    Baseline: {parsed.baseline_mean} {parsed.unit}
+                  </span>
+                </>
               )}
             </div>
           </div>
         )}
       </div>
 
-      {/* Clean 1-Line Micro-Caption / Completeness Footer */}
+      {/* 1-Line Compact Completeness Footer */}
       <div
         data-testid="domain-completeness"
         style={{
           borderTop: '1px solid #1E293B',
-          padding: '4px 12px',
+          padding: '3px 9px',
           backgroundColor: '#080B12',
           display: 'flex',
           alignItems: 'center',
@@ -499,11 +508,9 @@ export const DomainCard: React.FC<DomainCardProps> = ({ domain, isSelected = fal
           fontFamily: "'JetBrains Mono', monospace",
         }}
       >
-        <span>
-          {isInsufficient ? 'CADENCE OVERDUE' : `${domain.completeness_pct}% COMPLETE`}
-        </span>
+        <span>{isInsufficient ? 'CADENCE OVERDUE' : `${domain.completeness_pct}% COMPLETE`}</span>
         <span style={{ color: isSelected ? '#38BDF8' : '#475569', fontWeight: 600 }}>
-          {isSelected ? '● ACTIVE STREAM' : 'VIEW TELEMETRY →'}
+          {isSelected ? '● STREAMING' : 'VIEW →'}
         </span>
       </div>
     </div>

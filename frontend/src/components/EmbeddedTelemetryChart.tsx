@@ -15,7 +15,7 @@ import {
   Tooltip,
   ReferenceLine,
 } from 'recharts';
-import { Sliders, Activity, Maximize2, AlertTriangle, Info } from 'lucide-react';
+import { Activity, Maximize2 } from 'lucide-react';
 
 interface EmbeddedTelemetryChartProps {
   detail: DomainDetailResponse | null;
@@ -97,7 +97,6 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
     }
   }, [metric, filteredSeries, includeSuspectOutliers]);
 
-  // Format data for Recharts
   const chartData = useMemo(() => {
     return filteredSeries.map((pt: MetricSeriesPoint) => {
       let timeLabel = pt.timestamp;
@@ -124,7 +123,7 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
 
     if (payload.quality === 'SUSPECT') {
       return (
-        <svg x={cx - 7} y={cy - 7} width={14} height={14} viewBox="0 0 24 24">
+        <svg x={cx - 6} y={cy - 6} width={12} height={12} viewBox="0 0 24 24">
           <polygon
             points="12 2 22 20 2 20"
             fill="#FBBF24"
@@ -134,7 +133,7 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
         </svg>
       );
     }
-    return <circle cx={cx} cy={cy} r={3} fill="#34D399" stroke="#080B12" strokeWidth={1} />;
+    return <circle cx={cx} cy={cy} r={2.5} fill="#34D399" stroke="#080B12" strokeWidth={1} />;
   };
 
   const CustomTooltip = ({ active, payload }: any) => {
@@ -146,17 +145,17 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
             backgroundColor: '#07090F',
             border: `1px solid ${data.isSuspect ? '#FBBF24' : '#38BDF8'}`,
             borderRadius: '2px',
-            padding: '8px 12px',
+            padding: '6px 10px',
             fontFamily: "'JetBrains Mono', monospace",
             fontSize: '11px',
             boxShadow: '0 4px 12px rgba(0,0,0,0.8)',
           }}
         >
-          <div style={{ color: '#94A3B8', fontSize: '10px', marginBottom: '2px' }}>
+          <div style={{ color: '#94A3B8', fontSize: '9px', marginBottom: '2px' }}>
             {data.timeLabel} ({data.timestamp})
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-            <span style={{ fontSize: '15px', fontWeight: 800, color: data.isSuspect ? '#FBBF24' : '#F8FAFC' }}>
+            <span style={{ fontSize: '14px', fontWeight: 800, color: data.isSuspect ? '#FBBF24' : '#F8FAFC' }}>
               {data.value !== null ? `${data.value} ${unit}` : 'MISSING (No Signal)'}
             </span>
             <span
@@ -172,11 +171,11 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
           {data.note && (
             <div
               style={{
-                marginTop: '4px',
-                fontSize: '10px',
+                marginTop: '3px',
+                fontSize: '9.5px',
                 color: '#CBD5E1',
                 borderLeft: '2px solid #FBBF24',
-                paddingLeft: '6px',
+                paddingLeft: '5px',
                 fontStyle: 'italic',
               }}
             >
@@ -195,15 +194,15 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
         style={{
           backgroundColor: '#0C101A',
           border: '1px solid #1E293B',
-          borderRadius: '2px',
-          padding: '24px',
+          borderRadius: '0px',
+          padding: '16px',
           textAlign: 'center',
           color: '#64748B',
           fontFamily: "'JetBrains Mono', monospace",
-          fontSize: '12px',
+          fontSize: '11px',
         }}
       >
-        <Activity size={24} style={{ margin: '0 auto 8px', color: '#38BDF8' }} />
+        <Activity size={20} style={{ margin: '0 auto 6px', color: '#38BDF8' }} />
         SELECT A DOMAIN TO VIEW EMBEDDED HIGH-RESOLUTION TELEMETRY
       </div>
     );
@@ -216,11 +215,11 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
       style={{
         backgroundColor: '#0C101A',
         border: '1px solid #1E293B',
-        borderRadius: '2px',
-        padding: '14px 16px',
+        borderRadius: '0px',
+        padding: '10px 12px 8px 12px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '10px',
+        gap: '6px',
       }}
     >
       {/* Gradient Definitions */}
@@ -240,17 +239,17 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
           flexWrap: 'wrap',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: '8px',
+          gap: '6px',
           borderBottom: '1px solid #1E293B',
-          paddingBottom: '8px',
+          paddingBottom: '5px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Activity size={15} color="#34D399" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Activity size={14} color="#34D399" />
           <div>
             <span
               style={{
-                fontSize: '11px',
+                fontSize: '10.5px',
                 fontWeight: 800,
                 color: '#34D399',
                 letterSpacing: '0.04em',
@@ -263,7 +262,7 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
             <span
               style={{
                 marginLeft: '6px',
-                fontSize: '13px',
+                fontSize: '12px',
                 fontWeight: 700,
                 color: '#F8FAFC',
                 fontFamily: "'JetBrains Mono', monospace",
@@ -275,21 +274,20 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
         </div>
 
         {/* Controls: Range Selector + Outlier Toggle + Expand */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {/* Outlier Toggle */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {hasSuspectOutlier && (
             <label
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '5px',
-                fontSize: '10px',
+                gap: '4px',
+                fontSize: '9.5px',
                 fontFamily: "'JetBrains Mono', monospace",
                 color: includeSuspectOutliers ? '#FBBF24' : '#94A3B8',
                 cursor: 'pointer',
                 backgroundColor: '#07090F',
                 border: `1px solid ${includeSuspectOutliers ? '#FBBF24' : '#1E293B'}`,
-                padding: '3px 8px',
+                padding: '2px 6px',
                 borderRadius: '2px',
               }}
             >
@@ -299,11 +297,10 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
                 onChange={(e) => setIncludeSuspectOutliers(e.target.checked)}
                 style={{ cursor: 'pointer', accentColor: '#FBBF24' }}
               />
-              <span>Outliers in Axis Scale</span>
+              <span>Outliers in Axis</span>
             </label>
           )}
 
-          {/* Range Selector */}
           <div style={{ display: 'flex', backgroundColor: '#07090F', borderRadius: '2px', border: '1px solid #1E293B' }}>
             {(['7d', '30d', 'mission'] as const).map((r) => (
               <button
@@ -313,8 +310,8 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
                   background: timeRange === r ? '#1E293B' : 'transparent',
                   color: timeRange === r ? '#38BDF8' : '#64748B',
                   border: 'none',
-                  padding: '2px 8px',
-                  fontSize: '10px',
+                  padding: '2px 6px',
+                  fontSize: '9.5px',
                   fontFamily: "'JetBrains Mono', monospace",
                   fontWeight: 700,
                   cursor: 'pointer',
@@ -326,43 +323,41 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
             ))}
           </div>
 
-          {/* Full Screen / Deep View Button */}
           {onExpand && (
             <button
               onClick={onExpand}
               className="aero-btn"
-              style={{ padding: '3px 8px', fontSize: '10px' }}
+              style={{ padding: '2px 6px', fontSize: '9.5px' }}
               title="Expand Deep Clinical View"
             >
-              <Maximize2 size={11} />
+              <Maximize2 size={10} />
               <span>Deep View</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Main Time-Series LineChart */}
-      <div style={{ width: '100%', height: '220px', backgroundColor: '#07090F', borderRadius: '2px', padding: '6px' }}>
+      {/* Main Time-Series LineChart (min-height ~190px) */}
+      <div style={{ width: '100%', height: '190px', backgroundColor: '#07090F', padding: '4px 6px 0 0' }}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+          <LineChart data={chartData} margin={{ top: 6, right: 15, left: -10, bottom: 0 }}>
             <CartesianGrid stroke="#1E293B" strokeDasharray="2 2" vertical={false} />
             <XAxis
               dataKey="timeLabel"
               stroke="#475569"
-              tick={{ fill: '#64748B', fontSize: 9, fontFamily: "'JetBrains Mono', monospace" }}
+              tick={{ fill: '#64748B', fontSize: 8.5, fontFamily: "'JetBrains Mono', monospace" }}
               tickLine={{ stroke: '#1E293B' }}
             />
             <YAxis
               domain={[yMin, yMax]}
               stroke="#475569"
-              tick={{ fill: '#64748B', fontSize: 9, fontFamily: "'JetBrains Mono', monospace" }}
+              tick={{ fill: '#64748B', fontSize: 8.5, fontFamily: "'JetBrains Mono', monospace" }}
               tickLine={{ stroke: '#1E293B' }}
               unit={` ${unit}`}
-              width={55}
+              width={50}
             />
             <Tooltip content={<CustomTooltip />} />
 
-            {/* Baseline Mean Reference Line */}
             {baseline && (
               <ReferenceLine
                 y={baseline.mean}
@@ -371,14 +366,13 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
                 label={{
                   value: `Mean ${baseline.mean}`,
                   fill: '#38BDF8',
-                  fontSize: 8,
+                  fontSize: 7.5,
                   position: 'right',
                   fontFamily: "'JetBrains Mono', monospace",
                 }}
               />
             )}
 
-            {/* Baseline +2 Sigma Reference Line */}
             {baseline && (
               <ReferenceLine
                 y={baseline.mean + 2 * baseline.std_dev}
@@ -387,14 +381,13 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
                 label={{
                   value: `+2σ ${Math.round((baseline.mean + 2 * baseline.std_dev) * 10) / 10}`,
                   fill: '#FBBF24',
-                  fontSize: 8,
+                  fontSize: 7.5,
                   position: 'right',
                   fontFamily: "'JetBrains Mono', monospace",
                 }}
               />
             )}
 
-            {/* Strictly enforce connectNulls={false} so MISSING values break the line */}
             <Line
               type="monotone"
               dataKey="value"
@@ -402,7 +395,7 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
               strokeWidth={2}
               connectNulls={false}
               dot={<CustomDot />}
-              activeDot={{ r: 5, fill: '#38BDF8' }}
+              activeDot={{ r: 4, fill: '#38BDF8' }}
             />
           </LineChart>
         </ResponsiveContainer>
@@ -411,15 +404,18 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
       {/* Scope Notice Banner */}
       <div
         style={{
-          fontSize: '10px',
+          fontSize: '9.5px',
           color: '#94A3B8',
-          lineHeight: '1.35',
+          lineHeight: '1.3',
           backgroundColor: '#07090F',
           borderLeft: '2px solid #38BDF8',
-          padding: '6px 10px',
-          borderRadius: '2px',
+          padding: '4px 8px',
           fontFamily: "'JetBrains Mono', monospace",
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
         }}
+        title={detail.measurement_scope_notice || summary?.measurement_scope_notice}
       >
         <span style={{ color: '#38BDF8', fontWeight: 800 }}>SCOPE NOTICE: </span>
         {detail.measurement_scope_notice ||
