@@ -99,17 +99,21 @@ async def get_domain_detail(
 
         unit = recs[0].unit if recs else (all_metric_recs[0].unit if all_metric_recs else "units")
 
-        series_points = [
-            MetricSeriesPoint(
-                timestamp=r.timestamp,
-                value=r.value,
-                quality=DataQuality(r.quality),
-                provenance=Provenance(r.provenance),
-                sensor_id=r.sensor_id,
-                note=r.note,
+        series_points = []
+        for r in recs:
+            day_diff = (astronaut.reference_timestamp.date() - r.timestamp.date()).days
+            pt_mission_day = max(1, astronaut.mission_day - day_diff)
+            series_points.append(
+                MetricSeriesPoint(
+                    timestamp=r.timestamp,
+                    value=r.value,
+                    quality=DataQuality(r.quality),
+                    provenance=Provenance(r.provenance),
+                    sensor_id=r.sensor_id,
+                    note=r.note,
+                    mission_day=pt_mission_day,
+                )
             )
-            for r in recs
-        ]
 
         metric_details.append(
             DomainMetricDetail(

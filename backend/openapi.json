@@ -1055,6 +1055,17 @@
               }
             ],
             "title": "Note"
+          },
+          "mission_day": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mission Day"
           }
         },
         "type": "object",

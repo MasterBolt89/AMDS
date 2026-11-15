@@ -134,6 +134,7 @@ class MetricSeriesPoint(BaseModel):
     provenance: Provenance
     sensor_id: Optional[str] = None
     note: Optional[str] = None
+    mission_day: Optional[int] = None
 
 
 class DomainMetricBaseline(BaseModel):

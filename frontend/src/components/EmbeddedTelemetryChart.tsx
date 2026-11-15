@@ -100,22 +100,30 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
   const chartData = useMemo(() => {
     return filteredSeries.map((pt: MetricSeriesPoint) => {
       let timeLabel = pt.timestamp;
+      let day = pt.mission_day;
       try {
         const d = new Date(pt.timestamp);
-        timeLabel = `D${pt.mission_day || 42} ${d.getUTCHours().toString().padStart(2, '0')}:00`;
+        const hrs = d.getUTCHours().toString().padStart(2, '0');
+        const mins = d.getUTCMinutes().toString().padStart(2, '0');
+        if (!day) {
+          const maxDate = filteredSeries.length > 0 ? new Date(filteredSeries[filteredSeries.length - 1].timestamp).getTime() : d.getTime();
+          const dayDiff = Math.round((maxDate - d.getTime()) / (24 * 3600 * 1000));
+          day = Math.max(1, maxMissionDay - dayDiff);
+        }
+        timeLabel = `D${day} ${hrs}:${mins}`;
       } catch {}
 
       return {
         timestamp: pt.timestamp,
         timeLabel,
-        mission_day: pt.mission_day,
+        mission_day: day || pt.mission_day || maxMissionDay,
         value: pt.value,
         quality: pt.quality,
         note: pt.note,
         isSuspect: pt.quality === 'SUSPECT',
       };
     });
-  }, [filteredSeries]);
+  }, [filteredSeries, maxMissionDay]);
 
   const CustomDot = (props: any) => {
     const { cx, cy, payload } = props;

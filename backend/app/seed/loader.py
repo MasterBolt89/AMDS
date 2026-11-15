@@ -69,7 +69,11 @@ async def _seed_nominal_iss(session: AsyncSession, astronaut_id: str, ref_time: 
     # 1. Cardiovascular: resting_hr_bpm ~62
     hr_vals = [61, 63, 62, 60, 64, 62, 61, 63, 62, 61, 63, 62, 60, 62, 62]
     for i, val in enumerate(hr_vals):
-        t = ref_time - timedelta(hours=(len(hr_vals) - 1 - i) * 2)
+        days_ago = len(hr_vals) - 1 - i
+        if days_ago == 0:
+            t = ref_time - timedelta(hours=1)
+        else:
+            t = (ref_time - timedelta(days=days_ago)).replace(hour=7, minute=30, second=0)
         records.append(
             MetricRecordModel(
                 astronaut_id=astronaut_id,
@@ -88,7 +92,8 @@ async def _seed_nominal_iss(session: AsyncSession, astronaut_id: str, ref_time: 
     # 2. Sleep: sleep_duration_hours ~7.5
     sleep_vals = [7.4, 7.6, 7.3, 7.7, 7.5, 7.4, 7.6, 7.5, 7.3, 7.6, 7.5, 7.4, 7.6, 7.5]
     for i, val in enumerate(sleep_vals):
-        t = ref_time - timedelta(days=(len(sleep_vals) - 1 - i))
+        days_ago = len(sleep_vals) - 1 - i
+        t = (ref_time - timedelta(days=days_ago)).replace(hour=6, minute=45, second=0)
         records.append(
             MetricRecordModel(
                 astronaut_id=astronaut_id,
@@ -106,7 +111,8 @@ async def _seed_nominal_iss(session: AsyncSession, astronaut_id: str, ref_time: 
 
     # 3. Behavioral: cognitive_fatigue_score ~2.5
     for i in range(14):
-        t = ref_time - timedelta(days=(13 - i))
+        days_ago = 13 - i
+        t = (ref_time - timedelta(days=days_ago)).replace(hour=11, minute=30, second=0)
         records.append(
             MetricRecordModel(
                 astronaut_id=astronaut_id,
@@ -123,7 +129,8 @@ async def _seed_nominal_iss(session: AsyncSession, astronaut_id: str, ref_time: 
 
     # 4. Musculoskeletal: exercise_adherence_pct ~95
     for i in range(14):
-        t = ref_time - timedelta(days=(13 - i))
+        days_ago = 13 - i
+        t = (ref_time - timedelta(days=days_ago)).replace(hour=14, minute=15, second=0)
         records.append(
             MetricRecordModel(
                 astronaut_id=astronaut_id,
@@ -141,7 +148,7 @@ async def _seed_nominal_iss(session: AsyncSession, astronaut_id: str, ref_time: 
 
     # 5. Immune: crp_biomarker_mg_l ~0.8 (assays on day -28, -14, -2)
     for days_ago in [28, 14, 2]:
-        t = ref_time - timedelta(days=days_ago)
+        t = (ref_time - timedelta(days=days_ago)).replace(hour=8, minute=15, second=0)
         records.append(
             MetricRecordModel(
                 astronaut_id=astronaut_id,
@@ -158,7 +165,8 @@ async def _seed_nominal_iss(session: AsyncSession, astronaut_id: str, ref_time: 
 
     # 6. Radiation: daily_dose_msv ~0.42
     for i in range(14):
-        t = ref_time - timedelta(days=(13 - i))
+        days_ago = 13 - i
+        t = (ref_time - timedelta(days=days_ago)).replace(hour=16, minute=0, second=0)
         records.append(
             MetricRecordModel(
                 astronaut_id=astronaut_id,
@@ -174,16 +182,32 @@ async def _seed_nominal_iss(session: AsyncSession, astronaut_id: str, ref_time: 
             )
         )
 
-    # 7. ECLSS: co2_partial_pressure_mmhg ~2.2
-    for i in range(15):
-        t = ref_time - timedelta(hours=(14 - i))
+    # 7. ECLSS: co2_partial_pressure_mmhg ~2.2 (Multi-day baseline + today)
+    for d in range(8, 0, -1):
+        t = (ref_time - timedelta(days=d)).replace(hour=12, minute=0, second=0)
         records.append(
             MetricRecordModel(
                 astronaut_id=astronaut_id,
                 domain_id=DomainId.ENVIRONMENT_ECLSS.value,
                 metric_name="co2_partial_pressure_mmhg",
                 timestamp=t,
-                value=2.15 + (i % 3) * 0.05,
+                value=2.15 + (d % 3) * 0.05,
+                unit="mmHg",
+                quality="VALID",
+                provenance="SIMULATED",
+                modality="ENVIRONMENTAL_SENSOR",
+                sensor_id="CABIN-AIR-NODE2",
+            )
+        )
+    for h in [12, 8, 4, 2, 1, 0]:
+        t = ref_time - timedelta(hours=h)
+        records.append(
+            MetricRecordModel(
+                astronaut_id=astronaut_id,
+                domain_id=DomainId.ENVIRONMENT_ECLSS.value,
+                metric_name="co2_partial_pressure_mmhg",
+                timestamp=t,
+                value=2.20 + (h % 3) * 0.04,
                 unit="mmHg",
                 quality="VALID",
                 provenance="SIMULATED",
@@ -194,7 +218,8 @@ async def _seed_nominal_iss(session: AsyncSession, astronaut_id: str, ref_time: 
 
     # 8. Sensorimotor: postural_instability_score ~1.5
     for i in range(14):
-        t = ref_time - timedelta(days=(13 - i))
+        days_ago = 13 - i
+        t = (ref_time - timedelta(days=days_ago)).replace(hour=10, minute=30, second=0)
         records.append(
             MetricRecordModel(
                 astronaut_id=astronaut_id,
@@ -211,7 +236,8 @@ async def _seed_nominal_iss(session: AsyncSession, astronaut_id: str, ref_time: 
 
     # 9. Nutrition: caloric_intake_kcal ~2800
     for i in range(14):
-        t = ref_time - timedelta(days=(13 - i))
+        days_ago = 13 - i
+        t = (ref_time - timedelta(days=days_ago)).replace(hour=12, minute=45, second=0)
         records.append(
             MetricRecordModel(
                 astronaut_id=astronaut_id,
@@ -253,7 +279,11 @@ async def _seed_circadian_drift(session: AsyncSession, astronaut_id: str, ref_ti
     # 1. Cardiovascular: Baseline ~62 bpm (std ~2.0), recent 24h jumps to 74 bpm (Z > 5)
     hr_vals = [61, 62, 60, 63, 62, 61, 63, 62, 61, 62, 64, 62, 68, 72, 75]
     for i, val in enumerate(hr_vals):
-        t = ref_time - timedelta(hours=(len(hr_vals) - 1 - i) * 2)
+        days_ago = len(hr_vals) - 1 - i
+        if days_ago == 0:
+            t = ref_time - timedelta(hours=1)
+        else:
+            t = (ref_time - timedelta(days=days_ago)).replace(hour=7, minute=30, second=0)
         records.append(
             MetricRecordModel(
                 astronaut_id=astronaut_id,
@@ -273,7 +303,8 @@ async def _seed_circadian_drift(session: AsyncSession, astronaut_id: str, ref_ti
     # Also include 1 SUSPECT and 1 MISSING point to demonstrate data quality markers!
     sleep_vals = [7.5, 7.6, 7.4, 7.5, 7.7, 7.5, None, 14.5, 7.6, 7.4, 7.5, 5.2, 4.8, 4.3]
     for i, val in enumerate(sleep_vals):
-        t = ref_time - timedelta(days=(len(sleep_vals) - 1 - i))
+        days_ago = len(sleep_vals) - 1 - i
+        t = (ref_time - timedelta(days=days_ago)).replace(hour=6, minute=45, second=0)
         if val is None:
             quality = "MISSING"
             v = None
@@ -306,7 +337,8 @@ async def _seed_circadian_drift(session: AsyncSession, astronaut_id: str, ref_ti
     # 3. Behavioral: Cognitive fatigue baseline ~2.5, rises to 7.0 (Z > 5)
     fatigue_vals = [2.0, 2.5, 2.0, 3.0, 2.5, 2.0, 3.0, 2.5, 3.0, 2.5, 3.0, 5.0, 6.5, 7.0]
     for i, val in enumerate(fatigue_vals):
-        t = ref_time - timedelta(days=(len(fatigue_vals) - 1 - i))
+        days_ago = len(fatigue_vals) - 1 - i
+        t = (ref_time - timedelta(days=days_ago)).replace(hour=11, minute=30, second=0)
         records.append(
             MetricRecordModel(
                 astronaut_id=astronaut_id,
@@ -323,7 +355,8 @@ async def _seed_circadian_drift(session: AsyncSession, astronaut_id: str, ref_ti
 
     # 4. Musculoskeletal: nominal
     for i in range(14):
-        t = ref_time - timedelta(days=(13 - i))
+        days_ago = 13 - i
+        t = (ref_time - timedelta(days=days_ago)).replace(hour=14, minute=15, second=0)
         records.append(
             MetricRecordModel(
                 astronaut_id=astronaut_id,
@@ -360,7 +393,8 @@ async def _seed_circadian_drift(session: AsyncSession, astronaut_id: str, ref_ti
 
     # 6. Radiation: nominal
     for i in range(14):
-        t = ref_time - timedelta(days=(13 - i))
+        days_ago = 13 - i
+        t = (ref_time - timedelta(days=days_ago)).replace(hour=16, minute=0, second=0)
         records.append(
             MetricRecordModel(
                 astronaut_id=astronaut_id,
@@ -376,16 +410,32 @@ async def _seed_circadian_drift(session: AsyncSession, astronaut_id: str, ref_ti
             )
         )
 
-    # 7. ECLSS: nominal
-    for i in range(14):
-        t = ref_time - timedelta(hours=(13 - i))
+    # 7. ECLSS: nominal (Multi-day baseline + today)
+    for d in range(8, 0, -1):
+        t = (ref_time - timedelta(days=d)).replace(hour=12, minute=0, second=0)
         records.append(
             MetricRecordModel(
                 astronaut_id=astronaut_id,
                 domain_id=DomainId.ENVIRONMENT_ECLSS.value,
                 metric_name="co2_partial_pressure_mmhg",
                 timestamp=t,
-                value=2.4,
+                value=2.40,
+                unit="mmHg",
+                quality="VALID",
+                provenance="SIMULATED",
+                modality="ENVIRONMENTAL_SENSOR",
+                sensor_id="CABIN-AIR-NODE1",
+            )
+        )
+    for h in [12, 8, 4, 2, 1, 0]:
+        t = ref_time - timedelta(hours=h)
+        records.append(
+            MetricRecordModel(
+                astronaut_id=astronaut_id,
+                domain_id=DomainId.ENVIRONMENT_ECLSS.value,
+                metric_name="co2_partial_pressure_mmhg",
+                timestamp=t,
+                value=2.40,
                 unit="mmHg",
                 quality="VALID",
                 provenance="SIMULATED",
@@ -396,7 +446,8 @@ async def _seed_circadian_drift(session: AsyncSession, astronaut_id: str, ref_ti
 
     # 8. Sensorimotor: nominal
     for i in range(14):
-        t = ref_time - timedelta(days=(13 - i))
+        days_ago = 13 - i
+        t = (ref_time - timedelta(days=days_ago)).replace(hour=10, minute=30, second=0)
         records.append(
             MetricRecordModel(
                 astronaut_id=astronaut_id,
@@ -413,7 +464,8 @@ async def _seed_circadian_drift(session: AsyncSession, astronaut_id: str, ref_ti
 
     # 9. Nutrition: nominal
     for i in range(14):
-        t = ref_time - timedelta(days=(13 - i))
+        days_ago = 13 - i
+        t = (ref_time - timedelta(days=days_ago)).replace(hour=12, minute=45, second=0)
         records.append(
             MetricRecordModel(
                 astronaut_id=astronaut_id,
@@ -477,7 +529,7 @@ async def _seed_post_action_improved(session: AsyncSession, astronaut_id: str, r
 
     # Historical sleep records (baseline ~7.5h)
     for i in range(14):
-        t = ref_time - timedelta(days=(16 - i))
+        t = (ref_time - timedelta(days=(16 - i))).replace(hour=6, minute=45, second=0)
         records.append(
             MetricRecordModel(
                 astronaut_id=astronaut_id,
@@ -564,9 +616,27 @@ async def _seed_eva_incident_eclss(session: AsyncSession, astronaut_id: str, ref
     records: list[MetricRecordModel] = []
 
     # ECLSS CO2: Baseline ~2.1 mmHg (std 0.15), rises to 3.8 mmHg in the last 2 hours (Z > 10)
-    co2_vals = [2.1, 2.2, 2.1, 2.0, 2.2, 2.1, 2.2, 2.1, 2.0, 2.2, 2.1, 2.3, 3.2, 3.6, 3.8]
-    for i, val in enumerate(co2_vals):
-        t = ref_time - timedelta(hours=(len(co2_vals) - 1 - i))
+    co2_baseline = [2.1, 2.2, 2.1, 2.0, 2.2, 2.1, 2.2, 2.1, 2.0, 2.2, 2.1]
+    for i, val in enumerate(co2_baseline):
+        days_ago = len(co2_baseline) - i
+        t = (ref_time - timedelta(days=days_ago)).replace(hour=12, minute=0, second=0)
+        records.append(
+            MetricRecordModel(
+                astronaut_id=astronaut_id,
+                domain_id=DomainId.ENVIRONMENT_ECLSS.value,
+                metric_name="co2_partial_pressure_mmhg",
+                timestamp=t,
+                value=float(val),
+                unit="mmHg",
+                quality="VALID",
+                provenance="SIMULATED",
+                modality="ENVIRONMENTAL_SENSOR",
+                sensor_id="CABIN-AIR-NODE2",
+            )
+        )
+    eva_acute_points = [(8, 2.3), (3, 3.2), (2, 3.6), (1, 3.8)]
+    for hours_ago, val in eva_acute_points:
+        t = ref_time - timedelta(hours=hours_ago)
         records.append(
             MetricRecordModel(
                 astronaut_id=astronaut_id,
@@ -594,12 +664,17 @@ async def _seed_eva_incident_eclss(session: AsyncSession, astronaut_id: str, ref
 async def _add_nominal_baseline_records(astronaut_id: str, ref_time: datetime, records: list[MetricRecordModel]) -> None:
     # Cardiovascular
     for i in range(14):
+        days_ago = 13 - i
+        if days_ago == 0:
+            t = ref_time - timedelta(hours=1)
+        else:
+            t = (ref_time - timedelta(days=days_ago)).replace(hour=7, minute=30, second=0)
         records.append(
             MetricRecordModel(
                 astronaut_id=astronaut_id,
                 domain_id=DomainId.CARDIOVASCULAR.value,
                 metric_name="resting_hr_bpm",
-                timestamp=ref_time - timedelta(hours=(14 - i)),
+                timestamp=t,
                 value=62.0,
                 unit="bpm",
                 quality="VALID",
@@ -609,12 +684,14 @@ async def _add_nominal_baseline_records(astronaut_id: str, ref_time: datetime, r
         )
     # Sleep
     for i in range(14):
+        days_ago = 13 - i
+        t = (ref_time - timedelta(days=days_ago)).replace(hour=6, minute=45, second=0)
         records.append(
             MetricRecordModel(
                 astronaut_id=astronaut_id,
                 domain_id=DomainId.SLEEP_CIRCADIAN.value,
                 metric_name="sleep_duration_hours",
-                timestamp=ref_time - timedelta(days=(14 - i)),
+                timestamp=t,
                 value=7.5,
                 unit="hours",
                 quality="VALID",
@@ -624,12 +701,14 @@ async def _add_nominal_baseline_records(astronaut_id: str, ref_time: datetime, r
         )
     # Behavioral
     for i in range(14):
+        days_ago = 13 - i
+        t = (ref_time - timedelta(days=days_ago)).replace(hour=11, minute=30, second=0)
         records.append(
             MetricRecordModel(
                 astronaut_id=astronaut_id,
                 domain_id=DomainId.BEHAVIORAL_PSYCH.value,
                 metric_name="cognitive_fatigue_score",
-                timestamp=ref_time - timedelta(days=(14 - i)),
+                timestamp=t,
                 value=2.5,
                 unit="score_1_10",
                 quality="VALID",
@@ -639,12 +718,14 @@ async def _add_nominal_baseline_records(astronaut_id: str, ref_time: datetime, r
         )
     # Musculoskeletal
     for i in range(14):
+        days_ago = 13 - i
+        t = (ref_time - timedelta(days=days_ago)).replace(hour=14, minute=15, second=0)
         records.append(
             MetricRecordModel(
                 astronaut_id=astronaut_id,
                 domain_id=DomainId.MUSCULOSKELETAL.value,
                 metric_name="exercise_adherence_pct",
-                timestamp=ref_time - timedelta(days=(14 - i)),
+                timestamp=t,
                 value=95.0,
                 unit="pct",
                 quality="VALID",
@@ -654,12 +735,13 @@ async def _add_nominal_baseline_records(astronaut_id: str, ref_time: datetime, r
         )
     # Immune
     for days_ago in [28, 14, 2]:
+        t = (ref_time - timedelta(days=days_ago)).replace(hour=8, minute=15, second=0)
         records.append(
             MetricRecordModel(
                 astronaut_id=astronaut_id,
                 domain_id=DomainId.IMMUNE_MICROBIO.value,
                 metric_name="crp_biomarker_mg_l",
-                timestamp=ref_time - timedelta(days=days_ago),
+                timestamp=t,
                 value=0.8,
                 unit="mg/L",
                 quality="VALID",
@@ -669,12 +751,14 @@ async def _add_nominal_baseline_records(astronaut_id: str, ref_time: datetime, r
         )
     # Radiation
     for i in range(14):
+        days_ago = 13 - i
+        t = (ref_time - timedelta(days=days_ago)).replace(hour=16, minute=0, second=0)
         records.append(
             MetricRecordModel(
                 astronaut_id=astronaut_id,
                 domain_id=DomainId.RADIATION.value,
                 metric_name="daily_dose_msv",
-                timestamp=ref_time - timedelta(days=(14 - i)),
+                timestamp=t,
                 value=0.45,
                 unit="mSv",
                 quality="VALID",
@@ -684,12 +768,14 @@ async def _add_nominal_baseline_records(astronaut_id: str, ref_time: datetime, r
         )
     # Sensorimotor
     for i in range(14):
+        days_ago = 13 - i
+        t = (ref_time - timedelta(days=days_ago)).replace(hour=10, minute=30, second=0)
         records.append(
             MetricRecordModel(
                 astronaut_id=astronaut_id,
                 domain_id=DomainId.SENSORIMOTOR_NEURO.value,
                 metric_name="postural_instability_score",
-                timestamp=ref_time - timedelta(days=(14 - i)),
+                timestamp=t,
                 value=1.5,
                 unit="score_1_10",
                 quality="VALID",
@@ -699,12 +785,14 @@ async def _add_nominal_baseline_records(astronaut_id: str, ref_time: datetime, r
         )
     # Nutrition
     for i in range(14):
+        days_ago = 13 - i
+        t = (ref_time - timedelta(days=days_ago)).replace(hour=12, minute=45, second=0)
         records.append(
             MetricRecordModel(
                 astronaut_id=astronaut_id,
                 domain_id=DomainId.NUTRITION.value,
                 metric_name="caloric_intake_kcal",
-                timestamp=ref_time - timedelta(days=(14 - i)),
+                timestamp=t,
                 value=2800.0,
                 unit="kcal",
                 quality="VALID",
