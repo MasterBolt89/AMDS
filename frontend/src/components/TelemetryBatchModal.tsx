@@ -104,13 +104,13 @@ export const TelemetryBatchModal: React.FC<TelemetryBatchModalProps> = ({
             alignItems: 'center',
             justifyContent: 'space-between',
             marginBottom: '16px',
-            borderBottom: '1px solid #1F2937',
+            borderBottom: '1px solid #1E293B',
             paddingBottom: '12px',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <PlusCircle size={18} color="#38BDF8" />
-            <h3 style={{ margin: 0, fontSize: '16px', color: '#F8FAFC' }}>
+            <h3 style={{ margin: 0, fontSize: '16px', color: '#F8FAFC', fontFamily: "'JetBrains Mono', monospace" }}>
               Ingest Telemetry / Manual Check-In
             </h3>
           </div>
@@ -130,7 +130,7 @@ export const TelemetryBatchModal: React.FC<TelemetryBatchModalProps> = ({
         <form onSubmit={handleSubmit}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '11px', color: '#94A3B8', marginBottom: '4px', textTransform: 'uppercase' }}>
+              <label style={{ display: 'block', fontSize: '11px', color: '#94A3B8', marginBottom: '4px', textTransform: 'uppercase', fontFamily: "'JetBrains Mono', monospace" }}>
                 Target Domain:
               </label>
               <select
@@ -138,10 +138,10 @@ export const TelemetryBatchModal: React.FC<TelemetryBatchModalProps> = ({
                 onChange={(e) => handleDomainChange(e.target.value as DomainId)}
                 style={{
                   width: '100%',
-                  backgroundColor: '#0D1320',
+                  backgroundColor: '#0C101A',
                   color: '#F8FAFC',
-                  border: '1px solid #334155',
-                  borderRadius: '4px',
+                  border: '1px solid #1E293B',
+                  borderRadius: '2px',
                   padding: '8px',
                   fontSize: '12px',
                   fontFamily: "'JetBrains Mono', monospace",
@@ -160,7 +160,7 @@ export const TelemetryBatchModal: React.FC<TelemetryBatchModalProps> = ({
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '11px', color: '#94A3B8', marginBottom: '4px', textTransform: 'uppercase' }}>
+              <label style={{ display: 'block', fontSize: '11px', color: '#94A3B8', marginBottom: '4px', textTransform: 'uppercase', fontFamily: "'JetBrains Mono', monospace" }}>
                 Metric Name:
               </label>
               <input
@@ -169,10 +169,10 @@ export const TelemetryBatchModal: React.FC<TelemetryBatchModalProps> = ({
                 onChange={(e) => setMetricId(e.target.value)}
                 style={{
                   width: '100%',
-                  backgroundColor: '#0D1320',
+                  backgroundColor: '#0C101A',
                   color: '#F8FAFC',
-                  border: '1px solid #334155',
-                  borderRadius: '4px',
+                  border: '1px solid #1E293B',
+                  borderRadius: '2px',
                   padding: '8px',
                   fontSize: '12px',
                   fontFamily: "'JetBrains Mono', monospace",
@@ -185,7 +185,7 @@ export const TelemetryBatchModal: React.FC<TelemetryBatchModalProps> = ({
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '11px', color: '#94A3B8', marginBottom: '4px', textTransform: 'uppercase' }}>
+              <label style={{ display: 'block', fontSize: '11px', color: '#94A3B8', marginBottom: '4px', textTransform: 'uppercase', fontFamily: "'JetBrains Mono', monospace" }}>
                 Measured Value:
               </label>
               <input
@@ -195,10 +195,10 @@ export const TelemetryBatchModal: React.FC<TelemetryBatchModalProps> = ({
                 onChange={(e) => setValue(e.target.value)}
                 style={{
                   width: '100%',
-                  backgroundColor: '#0D1320',
+                  backgroundColor: '#0C101A',
                   color: '#F8FAFC',
-                  border: '1px solid #334155',
-                  borderRadius: '4px',
+                  border: '1px solid #1E293B',
+                  borderRadius: '2px',
                   padding: '8px',
                   fontSize: '12px',
                   fontFamily: "'JetBrains Mono', monospace",
@@ -209,7 +209,7 @@ export const TelemetryBatchModal: React.FC<TelemetryBatchModalProps> = ({
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '11px', color: '#94A3B8', marginBottom: '4px', textTransform: 'uppercase' }}>
+              <label style={{ display: 'block', fontSize: '11px', color: '#94A3B8', marginBottom: '4px', textTransform: 'uppercase', fontFamily: "'JetBrains Mono', monospace" }}>
                 Unit:
               </label>
               <input
@@ -218,10 +218,10 @@ export const TelemetryBatchModal: React.FC<TelemetryBatchModalProps> = ({
                 onChange={(e) => setUnit(e.target.value)}
                 style={{
                   width: '100%',
-                  backgroundColor: '#0D1320',
+                  backgroundColor: '#0C101A',
                   color: '#F8FAFC',
-                  border: '1px solid #334155',
-                  borderRadius: '4px',
+                  border: '1px solid #1E293B',
+                  borderRadius: '2px',
                   padding: '8px',
                   fontSize: '12px',
                   fontFamily: "'JetBrains Mono', monospace",
@@ -234,7 +234,7 @@ export const TelemetryBatchModal: React.FC<TelemetryBatchModalProps> = ({
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '14px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '10px', color: '#94A3B8', marginBottom: '4px', textTransform: 'uppercase' }}>
+              <label style={{ display: 'block', fontSize: '10px', color: '#94A3B8', marginBottom: '4px', textTransform: 'uppercase', fontFamily: "'JetBrains Mono', monospace" }}>
                 Modality:
               </label>
               <select
@@ -242,12 +242,13 @@ export const TelemetryBatchModal: React.FC<TelemetryBatchModalProps> = ({
                 onChange={(e) => setModality(e.target.value as Modality)}
                 style={{
                   width: '100%',
-                  backgroundColor: '#0D1320',
+                  backgroundColor: '#0C101A',
                   color: '#F8FAFC',
-                  border: '1px solid #334155',
-                  borderRadius: '4px',
+                  border: '1px solid #1E293B',
+                  borderRadius: '2px',
                   padding: '6px',
                   fontSize: '11px',
+                  fontFamily: "'JetBrains Mono', monospace",
                 }}
               >
                 <option value="LAB_ASSAY">LAB_ASSAY</option>
@@ -258,7 +259,7 @@ export const TelemetryBatchModal: React.FC<TelemetryBatchModalProps> = ({
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '10px', color: '#94A3B8', marginBottom: '4px', textTransform: 'uppercase' }}>
+              <label style={{ display: 'block', fontSize: '10px', color: '#94A3B8', marginBottom: '4px', textTransform: 'uppercase', fontFamily: "'JetBrains Mono', monospace" }}>
                 Provenance:
               </label>
               <select
@@ -266,12 +267,13 @@ export const TelemetryBatchModal: React.FC<TelemetryBatchModalProps> = ({
                 onChange={(e) => setProvenance(e.target.value as Provenance)}
                 style={{
                   width: '100%',
-                  backgroundColor: '#0D1320',
+                  backgroundColor: '#0C101A',
                   color: '#F8FAFC',
-                  border: '1px solid #334155',
-                  borderRadius: '4px',
+                  border: '1px solid #1E293B',
+                  borderRadius: '2px',
                   padding: '6px',
                   fontSize: '11px',
+                  fontFamily: "'JetBrains Mono', monospace",
                 }}
               >
                 <option value="MANUAL_ENTRY">MANUAL_ENTRY</option>
@@ -281,7 +283,7 @@ export const TelemetryBatchModal: React.FC<TelemetryBatchModalProps> = ({
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '10px', color: '#94A3B8', marginBottom: '4px', textTransform: 'uppercase' }}>
+              <label style={{ display: 'block', fontSize: '10px', color: '#94A3B8', marginBottom: '4px', textTransform: 'uppercase', fontFamily: "'JetBrains Mono', monospace" }}>
                 Data Quality:
               </label>
               <select
@@ -289,12 +291,13 @@ export const TelemetryBatchModal: React.FC<TelemetryBatchModalProps> = ({
                 onChange={(e) => setQuality(e.target.value as DataQuality)}
                 style={{
                   width: '100%',
-                  backgroundColor: '#0D1320',
+                  backgroundColor: '#0C101A',
                   color: '#F8FAFC',
-                  border: '1px solid #334155',
-                  borderRadius: '4px',
+                  border: '1px solid #1E293B',
+                  borderRadius: '2px',
                   padding: '6px',
                   fontSize: '11px',
+                  fontFamily: "'JetBrains Mono', monospace",
                 }}
               >
                 <option value="VALID">VALID</option>
@@ -305,7 +308,7 @@ export const TelemetryBatchModal: React.FC<TelemetryBatchModalProps> = ({
           </div>
 
           <div style={{ marginBottom: '18px' }}>
-            <label style={{ display: 'block', fontSize: '11px', color: '#94A3B8', marginBottom: '4px', textTransform: 'uppercase' }}>
+            <label style={{ display: 'block', fontSize: '11px', color: '#94A3B8', marginBottom: '4px', textTransform: 'uppercase', fontFamily: "'JetBrains Mono', monospace" }}>
               Clinical / Telemetric Notes:
             </label>
             <textarea
@@ -314,10 +317,10 @@ export const TelemetryBatchModal: React.FC<TelemetryBatchModalProps> = ({
               onChange={(e) => setNote(e.target.value)}
               style={{
                 width: '100%',
-                backgroundColor: '#0D1320',
+                backgroundColor: '#0C101A',
                 color: '#F8FAFC',
-                border: '1px solid #334155',
-                borderRadius: '4px',
+                border: '1px solid #1E293B',
+                borderRadius: '2px',
                 padding: '8px',
                 fontSize: '12px',
                 fontFamily: "'JetBrains Mono', monospace",

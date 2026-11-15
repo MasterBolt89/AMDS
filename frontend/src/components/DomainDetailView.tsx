@@ -160,13 +160,13 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
   const isInsufficient = detail.status === 'INSUFFICIENT_DATA';
 
   return (
-    <div style={{ padding: '24px', maxWidth: '1440px', margin: '0 auto' }}>
+    <div style={{ padding: '24px', maxWidth: '1440px', margin: '0 auto', backgroundColor: '#080B12', minHeight: '100%' }}>
       {/* Top Back & Header */}
       <div style={{ marginBottom: '20px' }}>
         <button
           className="aero-btn"
           onClick={onBack}
-          style={{ marginBottom: '14px', borderColor: '#334155' }}
+          style={{ marginBottom: '14px', borderColor: '#1E293B' }}
         >
           <ArrowLeft size={14} />
           <span>Return to Command Overview</span>
@@ -179,18 +179,19 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: '16px',
-            backgroundColor: '#111827',
-            border: '1px solid #1F2937',
-            borderRadius: '6px',
+            backgroundColor: '#0C101A',
+            border: '1px solid #1E293B',
+            borderRadius: '2px',
             padding: '16px 20px',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div
               style={{
-                backgroundColor: '#1E293B',
+                backgroundColor: '#07090F',
+                border: '1px solid #1E293B',
                 padding: '10px',
-                borderRadius: '6px',
+                borderRadius: '2px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -233,10 +234,10 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
       {/* Scope Notice Guardrail Banner */}
       <div
         style={{
-          backgroundColor: '#0F172A',
+          backgroundColor: '#0C101A',
           border: '1px solid #1E293B',
-          borderLeft: '4px solid #38BDF8',
-          borderRadius: '4px',
+          borderLeft: '3px solid #38BDF8',
+          borderRadius: '2px',
           padding: '14px 18px',
           marginBottom: '20px',
         }}
@@ -265,9 +266,9 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
       {isInsufficient && (
         <div
           style={{
-            backgroundColor: '#1E293B',
-            border: '2px dashed #64748B',
-            borderRadius: '6px',
+            backgroundColor: '#0C101A',
+            border: '1px dashed #475569',
+            borderRadius: '2px',
             padding: '16px 20px',
             marginBottom: '20px',
           }}
@@ -361,10 +362,10 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
                 key={mKey}
                 onClick={() => setSelectedMetricId(mKey)}
                 style={{
-                  backgroundColor: selectedMetricId === mKey ? '#1E293B' : '#0D1320',
-                  border: `1px solid ${selectedMetricId === mKey ? '#38BDF8' : '#1F2937'}`,
+                  backgroundColor: selectedMetricId === mKey ? '#1E293B' : '#07090F',
+                  border: `1px solid ${selectedMetricId === mKey ? '#38BDF8' : '#1E293B'}`,
                   color: selectedMetricId === mKey ? '#38BDF8' : '#94A3B8',
-                  borderRadius: '4px',
+                  borderRadius: '2px',
                   padding: '6px 14px',
                   fontSize: '12px',
                   fontWeight: 600,
@@ -389,10 +390,10 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
                 cursor: 'pointer',
                 fontSize: '11px',
                 color: includeSuspectOutliers ? '#F59E0B' : '#94A3B8',
-                backgroundColor: includeSuspectOutliers ? '#451A03' : '#0D1320',
-                border: `1px solid ${includeSuspectOutliers ? '#D97706' : '#1F2937'}`,
+                backgroundColor: includeSuspectOutliers ? '#451A03' : '#07090F',
+                border: `1px solid ${includeSuspectOutliers ? '#D97706' : '#1E293B'}`,
                 padding: '5px 10px',
-                borderRadius: '4px',
+                borderRadius: '2px',
                 fontFamily: "'JetBrains Mono', monospace",
                 userSelect: 'none',
               }}
@@ -414,9 +415,9 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
             style={{
               display: 'flex',
               alignItems: 'center',
-              backgroundColor: '#0D1320',
-              border: '1px solid #1F2937',
-              borderRadius: '4px',
+              backgroundColor: '#07090F',
+              border: '1px solid #1E293B',
+              borderRadius: '2px',
               padding: '2px',
             }}
           >
@@ -425,10 +426,10 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
                 key={range}
                 onClick={() => setTimeRange(range)}
                 style={{
-                  backgroundColor: timeRange === range ? '#0284C7' : 'transparent',
-                  color: timeRange === range ? '#FFFFFF' : '#94A3B8',
+                  backgroundColor: timeRange === range ? '#1E293B' : 'transparent',
+                  color: timeRange === range ? '#38BDF8' : '#94A3B8',
                   border: 'none',
-                  borderRadius: '3px',
+                  borderRadius: '2px',
                   padding: '4px 10px',
                   fontSize: '11px',
                   fontWeight: 600,
@@ -538,12 +539,12 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
                       return (
                         <div
                           style={{
-                            backgroundColor: '#0A0F1D',
-                            border: `1px solid ${isSuspect ? '#D97706' : isMissing ? '#64748B' : '#334155'}`,
-                            borderRadius: '4px',
+                            backgroundColor: '#07090F',
+                            border: `1px solid ${isSuspect ? '#FBBF24' : isMissing ? '#64748B' : '#38BDF8'}`,
+                            borderRadius: '2px',
                             padding: '10px 12px',
                             fontSize: '12px',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.7)',
+                            boxShadow: '0 8px 24px rgba(0,0,0,0.9)',
                             maxWidth: '300px',
                           }}
                         >
@@ -714,7 +715,7 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
               }}
             >
               <thead>
-                <tr style={{ backgroundColor: '#0D1320', color: '#94A3B8', borderBottom: '1px solid #1F2937' }}>
+                <tr style={{ backgroundColor: '#07090F', color: '#94A3B8', borderBottom: '1px solid #1E293B' }}>
                   <th style={{ padding: '8px 12px' }}>Timestamp</th>
                   <th style={{ padding: '8px 12px' }}>Mission Day</th>
                   <th style={{ padding: '8px 12px' }}>Measured Value</th>
@@ -729,8 +730,8 @@ export const DomainDetailView: React.FC<DomainDetailViewProps> = ({
                   <tr
                     key={idx}
                     style={{
-                      borderBottom: '1px solid #162032',
-                      backgroundColor: idx % 2 === 0 ? '#111827' : '#0D1320',
+                      borderBottom: '1px solid #1E293B',
+                      backgroundColor: idx % 2 === 0 ? '#0C101A' : '#080B12',
                     }}
                   >
                     <td style={{ padding: '8px 12px', fontFamily: "'JetBrains Mono', monospace", color: '#94A3B8' }}>

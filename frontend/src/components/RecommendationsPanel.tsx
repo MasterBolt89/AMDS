@@ -33,7 +33,7 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
     setSelectedRecId(rId);
     setActionNote(
       r.reassessment?.action_taken_note ||
-        'Countermeasure initiated: Bedtime shifted 30min earlier, pre-sleep blue-depleted lighting protocol engaged, cycle ergometer rescheduled.'
+      'Countermeasure initiated: Bedtime shifted 30min earlier, pre-sleep blue-depleted lighting protocol engaged, cycle ergometer rescheduled.'
     );
   };
 
@@ -101,7 +101,8 @@ export const RecommendationsPanel: React.FC<RecommendationsPanelProps> = ({
             }}
             title={`RECOMMENDED PROTOCOL & ESCALATION TRIGGER (${recommendations.length})`}
           >
-            RECOMMENDED PROTOCOL & ESCALATION TRIGGER ({recommendations.length})
+            <span className="hidden 2xl:inline">RECOMMENDED PROTOCOL & ESCALATION TRIGGER</span>
+            <span className="2xl:hidden">RECOMMENDED PROTOCOL</span> ({recommendations.length})
           </h2>
         </div>
 

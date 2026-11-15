@@ -84,13 +84,13 @@ export const OperationalRisksModal: React.FC<OperationalRisksModalProps> = ({
             alignItems: 'center',
             justifyContent: 'space-between',
             marginBottom: '16px',
-            borderBottom: '1px solid #1F2937',
+            borderBottom: '1px solid #1E293B',
             paddingBottom: '12px',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <AlertTriangle size={20} color="#F59E0B" />
-            <h3 style={{ margin: 0, fontSize: '16px', color: '#F8FAFC' }}>
+            <h3 style={{ margin: 0, fontSize: '16px', color: '#F8FAFC', fontFamily: "'JetBrains Mono', monospace" }}>
               Operational Mission Risk Ledger ({astronautId})
             </h3>
           </div>
@@ -122,20 +122,20 @@ export const OperationalRisksModal: React.FC<OperationalRisksModalProps> = ({
           <form
             onSubmit={handleCreateRisk}
             style={{
-              backgroundColor: '#0D1320',
-              border: '1px solid #334155',
-              borderRadius: '6px',
+              backgroundColor: '#07090F',
+              border: '1px solid #1E293B',
+              borderRadius: '2px',
               padding: '16px',
               marginBottom: '18px',
             }}
           >
-            <div style={{ fontSize: '12px', fontWeight: 700, color: '#38BDF8', marginBottom: '12px' }}>
+            <div style={{ fontSize: '12px', fontWeight: 700, color: '#38BDF8', marginBottom: '12px', fontFamily: "'JetBrains Mono', monospace" }}>
               LOG OPERATIONAL RISK EVENT (POST /api/v1/astronauts/{astronautId}/operational-risks)
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '11px', color: '#94A3B8', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '11px', color: '#94A3B8', marginBottom: '4px', textTransform: 'uppercase', fontFamily: "'JetBrains Mono', monospace" }}>
                   Risk Event Type:
                 </label>
                 <select
@@ -143,12 +143,13 @@ export const OperationalRisksModal: React.FC<OperationalRisksModalProps> = ({
                   onChange={(e) => setEventType(e.target.value as OperationalRiskEventType)}
                   style={{
                     width: '100%',
-                    backgroundColor: '#111827',
+                    backgroundColor: '#0C101A',
                     color: '#F8FAFC',
-                    border: '1px solid #334155',
-                    borderRadius: '4px',
-                    padding: '6px',
+                    border: '1px solid #1E293B',
+                    borderRadius: '2px',
+                    padding: '6px 8px',
                     fontSize: '12px',
+                    fontFamily: "'JetBrains Mono', monospace",
                   }}
                 >
                   <option value="EVA_INJURY_PERFORMANCE">EVA Spacewalk / Pressure Suit Injury</option>
@@ -159,7 +160,7 @@ export const OperationalRisksModal: React.FC<OperationalRisksModalProps> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '11px', color: '#94A3B8', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '11px', color: '#94A3B8', marginBottom: '4px', textTransform: 'uppercase', fontFamily: "'JetBrains Mono', monospace" }}>
                   Severity:
                 </label>
                 <select
@@ -167,12 +168,13 @@ export const OperationalRisksModal: React.FC<OperationalRisksModalProps> = ({
                   onChange={(e) => setSeverity(e.target.value)}
                   style={{
                     width: '100%',
-                    backgroundColor: '#111827',
+                    backgroundColor: '#0C101A',
                     color: '#F8FAFC',
-                    border: '1px solid #334155',
-                    borderRadius: '4px',
-                    padding: '6px',
+                    border: '1px solid #1E293B',
+                    borderRadius: '2px',
+                    padding: '6px 8px',
                     fontSize: '12px',
+                    fontFamily: "'JetBrains Mono', monospace",
                   }}
                 >
                   <option value="NORMAL">NORMAL / RESOLVED</option>
@@ -183,7 +185,7 @@ export const OperationalRisksModal: React.FC<OperationalRisksModalProps> = ({
             </div>
 
             <div style={{ marginBottom: '12px' }}>
-              <label style={{ display: 'block', fontSize: '11px', color: '#94A3B8', marginBottom: '4px' }}>
+              <label style={{ display: 'block', fontSize: '11px', color: '#94A3B8', marginBottom: '4px', textTransform: 'uppercase', fontFamily: "'JetBrains Mono', monospace" }}>
                 Event Description:
               </label>
               <textarea
@@ -192,12 +194,13 @@ export const OperationalRisksModal: React.FC<OperationalRisksModalProps> = ({
                 onChange={(e) => setDescription(e.target.value)}
                 style={{
                   width: '100%',
-                  backgroundColor: '#111827',
+                  backgroundColor: '#0C101A',
                   color: '#F8FAFC',
-                  border: '1px solid #334155',
-                  borderRadius: '4px',
+                  border: '1px solid #1E293B',
+                  borderRadius: '2px',
                   padding: '6px 8px',
                   fontSize: '12px',
+                  fontFamily: "'JetBrains Mono', monospace",
                   boxSizing: 'border-box',
                 }}
                 required
@@ -205,7 +208,7 @@ export const OperationalRisksModal: React.FC<OperationalRisksModalProps> = ({
             </div>
 
             <div style={{ marginBottom: '12px' }}>
-              <label style={{ display: 'block', fontSize: '11px', color: '#94A3B8', marginBottom: '4px' }}>
+              <label style={{ display: 'block', fontSize: '11px', color: '#94A3B8', marginBottom: '4px', textTransform: 'uppercase', fontFamily: "'JetBrains Mono', monospace" }}>
                 Mitigation Applied:
               </label>
               <input
@@ -214,12 +217,13 @@ export const OperationalRisksModal: React.FC<OperationalRisksModalProps> = ({
                 onChange={(e) => setMitigationApplied(e.target.value)}
                 style={{
                   width: '100%',
-                  backgroundColor: '#111827',
+                  backgroundColor: '#0C101A',
                   color: '#F8FAFC',
-                  border: '1px solid #334155',
-                  borderRadius: '4px',
+                  border: '1px solid #1E293B',
+                  borderRadius: '2px',
                   padding: '6px 8px',
                   fontSize: '12px',
+                  fontFamily: "'JetBrains Mono', monospace",
                   boxSizing: 'border-box',
                 }}
                 required
@@ -248,7 +252,7 @@ export const OperationalRisksModal: React.FC<OperationalRisksModalProps> = ({
 
         {/* Risk Records List */}
         {loading ? (
-          <div style={{ padding: '20px', textAlign: 'center', color: '#94A3B8' }}>
+          <div style={{ padding: '20px', textAlign: 'center', color: '#94A3B8', fontFamily: "'JetBrains Mono', monospace" }}>
             Loading operational risk ledger...
           </div>
         ) : risks.length === 0 ? (
@@ -256,11 +260,12 @@ export const OperationalRisksModal: React.FC<OperationalRisksModalProps> = ({
             style={{
               padding: '24px',
               textAlign: 'center',
-              backgroundColor: '#0D1320',
-              border: '1px solid #1F2937',
-              borderRadius: '4px',
+              backgroundColor: '#0C101A',
+              border: '1px solid #1E293B',
+              borderRadius: '2px',
               color: '#94A3B8',
               fontSize: '13px',
+              fontFamily: "'JetBrains Mono', monospace",
             }}
           >
             No active operational risk records logged for this crew member.
@@ -273,15 +278,15 @@ export const OperationalRisksModal: React.FC<OperationalRisksModalProps> = ({
                 <div
                   key={r.id}
                   style={{
-                    backgroundColor: '#0D1320',
-                    border: '1px solid #1F2937',
+                    backgroundColor: '#0C101A',
+                    border: '1px solid #1E293B',
                     borderLeft:
                       sev === 'CRITICAL' || sev === 'HIGH'
                         ? '3px solid #EF4444'
                         : sev === 'ATTENTION' || sev === 'MEDIUM'
                         ? '3px solid #F59E0B'
                         : '3px solid #10B981',
-                    borderRadius: '4px',
+                    borderRadius: '2px',
                     padding: '12px 14px',
                   }}
                 >
