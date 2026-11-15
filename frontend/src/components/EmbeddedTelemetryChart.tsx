@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import {
   DomainDetailResponse,
   DomainSummary,
@@ -32,6 +32,49 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | 'mission'>('7d');
   const [includeSuspectOutliers, setIncludeSuspectOutliers] = useState<boolean>(false);
   const [showScopeTooltip, setShowScopeTooltip] = useState<boolean>(false);
+  const [popoverPlacement, setPopoverPlacement] = useState<'right' | 'left'>('right');
+
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+
+  const updatePopoverPosition = useCallback(() => {
+    if (!buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    const popoverWidth = 288;
+    const margin = 16;
+    if (rect.right - popoverWidth < margin) {
+      setPopoverPlacement('left');
+    } else {
+      setPopoverPlacement('right');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!showScopeTooltip) return;
+    updatePopoverPosition();
+
+    const handleResize = () => updatePopoverPosition();
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        popoverRef.current &&
+        !popoverRef.current.contains(e.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(e.target as Node)
+      ) {
+        setShowScopeTooltip(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('scroll', handleResize, true);
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('scroll', handleResize, true);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showScopeTooltip, updatePopoverPosition]);
 
   const metric: DomainMetricDetail | undefined = detail?.metrics[0];
   const metricName = metric?.metric_name || 'telemetry_stream';
@@ -241,7 +284,7 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
         height: '100%',
         minHeight: 0,
         flex: 1,
-        overflow: 'hidden',
+        position: 'relative',
       }}
     >
       {/* Gradient Definitions */}
@@ -258,18 +301,37 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
       <div
         style={{
           display: 'flex',
-          flexWrap: 'wrap',
+          flexWrap: 'nowrap',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: '6px',
+          gap: '8px',
           borderBottom: '1px solid #1E293B',
           paddingBottom: '4px',
           flexShrink: 0,
+          minWidth: 0,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, overflow: 'hidden' }}>
+        {/* Metric Title: min-w-0 flex-1 truncate */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            minWidth: 0,
+            flex: 1,
+            overflow: 'hidden',
+          }}
+        >
           <Activity size={13} color="#34D399" style={{ flexShrink: 0 }} />
-          <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              minWidth: 0,
+              overflow: 'hidden',
+              whiteSpace: 'nowrap',
+            }}
+          >
             <span
               style={{
                 fontSize: '10px',
@@ -278,6 +340,7 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
                 letterSpacing: '0.04em',
                 textTransform: 'uppercase',
                 fontFamily: "'JetBrains Mono', monospace",
+                flexShrink: 0,
               }}
             >
               LIVE TELEMETRY:
@@ -289,6 +352,10 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
                 fontWeight: 700,
                 color: '#F8FAFC',
                 fontFamily: "'JetBrains Mono', monospace",
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                minWidth: 0,
               }}
               title={`${detail.display_name} (${metricName})`}
             >
@@ -300,6 +367,7 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
                 fontSize: '9px',
                 color: '#64748B',
                 fontFamily: "'JetBrains Mono', monospace",
+                flexShrink: 0,
               }}
             >
               [SURVEILLANCE ONLY]
@@ -311,20 +379,20 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
           {/* Epistemic Scope Notice Header Button with interactive hover popover */}
           <div
-            className="tooltip-container"
+            style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}
             onMouseEnter={() => setShowScopeTooltip(true)}
             onMouseLeave={() => setShowScopeTooltip(false)}
-            style={{ position: 'relative' }}
           >
             <button
+              ref={buttonRef}
               onClick={() => setShowScopeTooltip(!showScopeTooltip)}
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '4px',
-                backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                backgroundColor: showScopeTooltip ? '#0284C7' : 'rgba(56, 189, 248, 0.1)',
                 border: '1px solid #0284C7',
-                color: '#38BDF8',
+                color: showScopeTooltip ? '#FFFFFF' : '#38BDF8',
                 borderRadius: '2px',
                 padding: '2px 6px',
                 fontSize: '9px',
@@ -336,41 +404,49 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
               }}
               title="Click or hover to inspect epistemic diagnostic scope limitations"
             >
-              <Info size={10} color="#38BDF8" />
+              <Info size={10} color={showScopeTooltip ? '#FFFFFF' : '#38BDF8'} />
               <span>SCOPE NOTICE</span>
             </button>
-            <div
-              className="tooltip-content"
-              style={{
-                right: 0,
-                left: 'auto',
-                width: '300px',
-                backgroundColor: '#07090F',
-                border: '1px solid #38BDF8',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.9)',
-                zIndex: 200,
-                padding: '8px 10px',
-              }}
-            >
+            {showScopeTooltip && (
               <div
+                ref={popoverRef}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  fontWeight: 800,
-                  color: '#38BDF8',
-                  fontSize: '10px',
-                  marginBottom: '4px',
-                  letterSpacing: '0.04em',
+                  position: 'absolute',
+                  top: 'calc(100% + 6px)',
+                  right: popoverPlacement === 'right' ? 0 : 'auto',
+                  left: popoverPlacement === 'left' ? 0 : 'auto',
+                  width: '288px',
+                  maxWidth: 'calc(100vw - 2rem)',
+                  backgroundColor: '#07090F',
+                  border: '1px solid #38BDF8',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.95)',
+                  zIndex: 50,
+                  padding: '8px 10px',
+                  borderRadius: '2px',
+                  fontFamily: "'JetBrains Mono', monospace",
+                  boxSizing: 'border-box',
                 }}
               >
-                <ShieldAlert size={12} color="#38BDF8" />
-                NASA CLINICAL SURVEILLANCE SCOPE NOTICE
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    fontWeight: 800,
+                    color: '#38BDF8',
+                    fontSize: '10px',
+                    marginBottom: '4px',
+                    letterSpacing: '0.04em',
+                  }}
+                >
+                  <ShieldAlert size={12} color="#38BDF8" />
+                  NASA CLINICAL SURVEILLANCE SCOPE NOTICE
+                </div>
+                <div style={{ fontSize: '10px', color: '#CBD5E1', lineHeight: '1.4' }}>
+                  {scopeNoticeText}
+                </div>
               </div>
-              <div style={{ fontSize: '10px', color: '#CBD5E1', lineHeight: '1.4' }}>
-                {scopeNoticeText}
-              </div>
-            </div>
+            )}
           </div>
 
           {hasSuspectOutlier && (
@@ -444,6 +520,7 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
           position: 'relative',
           backgroundColor: '#07090F',
           padding: '2px 4px 0 0',
+          overflow: 'hidden',
         }}
       >
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
