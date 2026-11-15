@@ -110,7 +110,17 @@ NASA-Space/
 
 ## ⚡ Quick Start Instructions
 
-You can run the system in two modes:
+### 🌟 One-Click Windows Demo Launcher
+For instant evaluation on Windows, simply double-click or run from the repository root:
+```cmd
+start-demo.bat
+```
+This self-healing launcher automatically configures tool environments, launches the FastAPI backend on `http://127.0.0.1:8000`, boots the Vite frontend on `http://127.0.0.1:5173`, and opens the dashboard directly in your default browser.
+
+---
+
+### Manual Launch Options
+You can also launch each service manually:
 * **Option A: Full-Stack Mode (Recommended):** Live FastAPI backend + React frontend with live REST synchronization.
 * **Option B: Standalone Frontend Mode:** Zero-backend setup using the built-in stateful mock simulator.
 
