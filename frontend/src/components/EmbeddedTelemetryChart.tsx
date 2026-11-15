@@ -15,7 +15,7 @@ import {
   Tooltip,
   ReferenceLine,
 } from 'recharts';
-import { Activity, Maximize2 } from 'lucide-react';
+import { Activity, Maximize2, ShieldAlert, Info } from 'lucide-react';
 
 interface EmbeddedTelemetryChartProps {
   detail: DomainDetailResponse | null;
@@ -31,6 +31,7 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
 }) => {
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | 'mission'>('7d');
   const [includeSuspectOutliers, setIncludeSuspectOutliers] = useState<boolean>(false);
+  const [showScopeTooltip, setShowScopeTooltip] = useState<boolean>(false);
 
   const metric: DomainMetricDetail | undefined = detail?.metrics[0];
   const metricName = metric?.metric_name || 'telemetry_stream';
@@ -208,6 +209,11 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
           color: '#64748B',
           fontFamily: "'JetBrains Mono', monospace",
           fontSize: '11px',
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
       >
         <Activity size={20} style={{ margin: '0 auto 6px', color: '#38BDF8' }} />
@@ -217,6 +223,10 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
   }
 
   const baseline = metric.baseline;
+  const scopeNoticeText =
+    detail.measurement_scope_notice ||
+    summary?.measurement_scope_notice ||
+    'Physiological telemetry tracks acute autonomic responses and spaceflight deconditioning. Does not substitute for comprehensive diagnostic clinical assays.';
 
   return (
     <div
@@ -224,13 +234,14 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
         backgroundColor: '#0C101A',
         border: '1px solid #1E293B',
         borderRadius: '0px',
-        padding: '8px 10px 6px 10px',
+        padding: '6px 8px 4px 8px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '5px',
+        gap: '4px',
         height: '100%',
         minHeight: 0,
         flex: 1,
+        overflow: 'hidden',
       }}
     >
       {/* Gradient Definitions */}
@@ -252,15 +263,16 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
           justifyContent: 'space-between',
           gap: '6px',
           borderBottom: '1px solid #1E293B',
-          paddingBottom: '5px',
+          paddingBottom: '4px',
+          flexShrink: 0,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Activity size={14} color="#34D399" />
-          <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, overflow: 'hidden' }}>
+          <Activity size={13} color="#34D399" style={{ flexShrink: 0 }} />
+          <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             <span
               style={{
-                fontSize: '10.5px',
+                fontSize: '10px',
                 fontWeight: 800,
                 color: '#34D399',
                 letterSpacing: '0.04em',
@@ -268,37 +280,102 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
                 fontFamily: "'JetBrains Mono', monospace",
               }}
             >
-              LIVE TECHNICAL — HEALTH TELEMETRY:
+              LIVE TELEMETRY:
             </span>
             <span
               style={{
                 marginLeft: '6px',
-                fontSize: '12px',
+                fontSize: '11px',
                 fontWeight: 700,
                 color: '#F8FAFC',
                 fontFamily: "'JetBrains Mono', monospace",
               }}
+              title={`${detail.display_name} (${metricName})`}
             >
               {detail.display_name} ({metricName})
             </span>
           </div>
         </div>
 
-        {/* Controls: Range Selector + Outlier Toggle + Expand */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* Controls: Scope Notice Badge + Outlier Toggle + Range Selector + Expand */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+          {/* Epistemic Scope Notice Header Button with interactive hover popover */}
+          <div
+            className="tooltip-container"
+            onMouseEnter={() => setShowScopeTooltip(true)}
+            onMouseLeave={() => setShowScopeTooltip(false)}
+            style={{ position: 'relative' }}
+          >
+            <button
+              onClick={() => setShowScopeTooltip(!showScopeTooltip)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '3px',
+                backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                border: '1px solid #0284C7',
+                color: '#38BDF8',
+                borderRadius: '2px',
+                padding: '2px 5px',
+                fontSize: '9px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                fontFamily: "'JetBrains Mono', monospace",
+                whiteSpace: 'nowrap',
+                transition: 'all 0.15s ease',
+              }}
+              title="Click or hover to inspect epistemic diagnostic scope limitations"
+            >
+              <Info size={10} color="#38BDF8" />
+              <span>SCOPE NOTICE</span>
+            </button>
+            <div
+              className="tooltip-content"
+              style={{
+                right: 0,
+                left: 'auto',
+                width: '280px',
+                backgroundColor: '#07090F',
+                border: '1px solid #38BDF8',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.9)',
+                zIndex: 200,
+                padding: '8px 10px',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  fontWeight: 800,
+                  color: '#38BDF8',
+                  fontSize: '10px',
+                  marginBottom: '4px',
+                  letterSpacing: '0.04em',
+                }}
+              >
+                <ShieldAlert size={12} color="#38BDF8" />
+                NASA CLINICAL SURVEILLANCE NOTICE
+              </div>
+              <div style={{ fontSize: '10px', color: '#CBD5E1', lineHeight: '1.4' }}>
+                {scopeNoticeText}
+              </div>
+            </div>
+          </div>
+
           {hasSuspectOutlier && (
             <label
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '4px',
-                fontSize: '9.5px',
+                gap: '3px',
+                fontSize: '9px',
                 fontFamily: "'JetBrains Mono', monospace",
                 color: includeSuspectOutliers ? '#FBBF24' : '#94A3B8',
                 cursor: 'pointer',
                 backgroundColor: '#07090F',
                 border: `1px solid ${includeSuspectOutliers ? '#FBBF24' : '#1E293B'}`,
-                padding: '2px 6px',
+                padding: '1px 5px',
                 borderRadius: '2px',
               }}
             >
@@ -308,7 +385,7 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
                 onChange={(e) => setIncludeSuspectOutliers(e.target.checked)}
                 style={{ cursor: 'pointer', accentColor: '#FBBF24' }}
               />
-              <span>Outliers in Axis</span>
+              <span>Outliers</span>
             </label>
           )}
 
@@ -321,8 +398,8 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
                   background: timeRange === r ? '#1E293B' : 'transparent',
                   color: timeRange === r ? '#38BDF8' : '#64748B',
                   border: 'none',
-                  padding: '2px 6px',
-                  fontSize: '9.5px',
+                  padding: '2px 5px',
+                  fontSize: '9px',
                   fontFamily: "'JetBrains Mono', monospace",
                   fontWeight: 700,
                   cursor: 'pointer',
@@ -338,7 +415,7 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
             <button
               onClick={onExpand}
               className="aero-btn"
-              style={{ padding: '2px 6px', fontSize: '9.5px' }}
+              style={{ padding: '2px 5px', fontSize: '9px' }}
               title="Expand Deep Clinical View"
             >
               <Maximize2 size={10} />
@@ -348,90 +425,106 @@ export const EmbeddedTelemetryChart: React.FC<EmbeddedTelemetryChartProps> = ({
         </div>
       </div>
 
-      {/* Main Time-Series LineChart (Flexible Height) */}
-      <div style={{ width: '100%', flex: 1, minHeight: '160px', backgroundColor: '#07090F', padding: '2px 6px 0 0' }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 4, right: 15, left: -10, bottom: 0 }}>
-            <CartesianGrid stroke="#1E293B" strokeDasharray="2 2" vertical={false} />
-            <XAxis
-              dataKey="timeLabel"
-              stroke="#475569"
-              tick={{ fill: '#64748B', fontSize: 8.5, fontFamily: "'JetBrains Mono', monospace" }}
-              tickLine={{ stroke: '#1E293B' }}
-            />
-            <YAxis
-              domain={[yMin, yMax]}
-              stroke="#475569"
-              tick={{ fill: '#64748B', fontSize: 8.5, fontFamily: "'JetBrains Mono', monospace" }}
-              tickLine={{ stroke: '#1E293B' }}
-              unit={` ${unit}`}
-              width={50}
-            />
-            <Tooltip content={<CustomTooltip />} />
-
-            {baseline && (
-              <ReferenceLine
-                y={baseline.mean}
-                stroke="#38BDF8"
-                strokeDasharray="4 4"
-                label={{
-                  value: `Mean ${baseline.mean}`,
-                  fill: '#38BDF8',
-                  fontSize: 7.5,
-                  position: 'right',
-                  fontFamily: "'JetBrains Mono', monospace",
-                }}
-              />
-            )}
-
-            {baseline && (
-              <ReferenceLine
-                y={baseline.mean + 2 * baseline.std_dev}
-                stroke="#FBBF24"
-                strokeDasharray="2 2"
-                label={{
-                  value: `+2σ ${Math.round((baseline.mean + 2 * baseline.std_dev) * 10) / 10}`,
-                  fill: '#FBBF24',
-                  fontSize: 7.5,
-                  position: 'right',
-                  fontFamily: "'JetBrains Mono', monospace",
-                }}
-              />
-            )}
-
-            <Line
-              type="monotone"
-              dataKey="value"
-              stroke="url(#telemetryGradient)"
-              strokeWidth={2}
-              connectNulls={false}
-              dot={<CustomDot />}
-              activeDot={{ r: 4, fill: '#38BDF8' }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* Scope Notice Banner */}
+      {/* Main Time-Series LineChart (Flexible Height with Absolute Child for Recharts) */}
       <div
         style={{
-          fontSize: '9px',
+          width: '100%',
+          flex: 1,
+          minHeight: 0,
+          position: 'relative',
+          backgroundColor: '#07090F',
+          padding: '2px 4px 0 0',
+        }}
+      >
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData} margin={{ top: 4, right: 12, left: -14, bottom: 0 }}>
+              <CartesianGrid stroke="#1E293B" strokeDasharray="2 2" vertical={false} />
+              <XAxis
+                dataKey="timeLabel"
+                stroke="#475569"
+                tick={{ fill: '#64748B', fontSize: 8, fontFamily: "'JetBrains Mono', monospace" }}
+                tickLine={{ stroke: '#1E293B' }}
+              />
+              <YAxis
+                domain={[yMin, yMax]}
+                stroke="#475569"
+                tick={{ fill: '#64748B', fontSize: 8, fontFamily: "'JetBrains Mono', monospace" }}
+                tickLine={{ stroke: '#1E293B' }}
+                unit={` ${unit}`}
+                width={46}
+              />
+              <Tooltip content={<CustomTooltip />} />
+
+              {baseline && (
+                <ReferenceLine
+                  y={baseline.mean}
+                  stroke="#38BDF8"
+                  strokeDasharray="4 4"
+                  label={{
+                    value: `Mean ${baseline.mean}`,
+                    fill: '#38BDF8',
+                    fontSize: 7.5,
+                    position: 'right',
+                    fontFamily: "'JetBrains Mono', monospace",
+                  }}
+                />
+              )}
+
+              {baseline && (
+                <ReferenceLine
+                  y={baseline.mean + 2 * baseline.std_dev}
+                  stroke="#FBBF24"
+                  strokeDasharray="2 2"
+                  label={{
+                    value: `+2σ ${Math.round((baseline.mean + 2 * baseline.std_dev) * 10) / 10}`,
+                    fill: '#FBBF24',
+                    fontSize: 7.5,
+                    position: 'right',
+                    fontFamily: "'JetBrains Mono', monospace",
+                  }}
+                />
+              )}
+
+              <Line
+                type="monotone"
+                dataKey="value"
+                stroke="url(#telemetryGradient)"
+                strokeWidth={2}
+                connectNulls={false}
+                dot={<CustomDot />}
+                activeDot={{ r: 4, fill: '#38BDF8' }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Scope Notice Banner (Responsive single-line strip that scales dynamically) */}
+      <div
+        style={{
+          flexShrink: 0,
+          height: '18px',
+          lineHeight: '18px',
+          fontSize: '8.5px',
           color: '#94A3B8',
-          lineHeight: '1.25',
           backgroundColor: '#07090F',
           borderLeft: '2px solid #38BDF8',
-          padding: '3px 6px',
+          padding: '0 6px',
           fontFamily: "'JetBrains Mono', monospace",
           whiteSpace: 'nowrap',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px',
         }}
-        title={detail.measurement_scope_notice || summary?.measurement_scope_notice}
+        title={scopeNoticeText}
       >
-        <span style={{ color: '#38BDF8', fontWeight: 800 }}>SCOPE NOTICE: </span>
-        {detail.measurement_scope_notice ||
-          summary?.measurement_scope_notice ||
-          'Telemetry stream reflects acute sensor inputs. Does not substitute for complete diagnostic assays.'}
+        <span style={{ color: '#38BDF8', fontWeight: 800, flexShrink: 0 }}>SCOPE NOTICE:</span>
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {scopeNoticeText}
+        </span>
       </div>
     </div>
   );
