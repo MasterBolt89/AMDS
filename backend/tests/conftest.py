@@ -14,8 +14,9 @@ from app.seed.loader import seed_scenario
 @pytest_asyncio.fixture(scope="function")
 async def test_session():
     """Provides an isolated SQLite database session for each test function."""
-    with tempfile.NamedTemporaryFile(suffix=".db") as tmp:
-        test_db_url = f"sqlite+aiosqlite:///{tmp.name}"
+    with tempfile.TemporaryDirectory() as tmpdir:
+        db_path = os.path.join(tmpdir, "test.db").replace("\\", "/")
+        test_db_url = f"sqlite+aiosqlite:///{db_path}"
         engine = create_async_engine(test_db_url, echo=False)
         async_session_factory = async_sessionmaker(
             bind=engine,
