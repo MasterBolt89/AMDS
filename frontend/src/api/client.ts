@@ -30,7 +30,7 @@ export const API_BASE_URL: string = metaEnv.VITE_API_BASE_URL || 'http://127.0.0
 /**
  * Stateful In-Memory Mock Adapter Supporting All 4 Scenarios & Dynamic Astronaut
  */
-class StatefulMockAdapter {
+export class StatefulMockAdapter {
   private currentScenarioId: string = 'nominal_iss_baseline';
   private currentAstronautId: string = 'astro-101';
   private dashboard!: DashboardResponse;

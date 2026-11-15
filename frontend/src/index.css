@@ -1,19 +1,23 @@
-/* NASA AMPCS Aerospace Command Styles */
+/* NASA AMPCS Flight-Surgeon Console Styles - Option 2 Master-Detail */
 :root {
-  --bg-space: #090D16;
-  --bg-card: #111827;
-  --bg-card-hover: #162032;
-  --bg-well: #0D1320;
-  --border-crisp: #1F2937;
-  --border-subtle: #2D3748;
+  --bg-obsidian: #080B12;
+  --bg-panel: #0C101A;
+  --bg-panel-hover: #121826;
+  --bg-well: #07090F;
+  --border-hairline: #1E293B;
+  --border-subtle: #172033;
+
+  /* Flight-Surgeon Aesthetic Palette */
+  --bio-mint: #34D399;       /* Nominal physiological: cardio, sleep, musculo, immune, nutrition */
+  --sky-cobalt: #38BDF8;     /* Neuro, radiation, ECLSS */
+  --warm-amber: #FBBF24;     /* Attention, drift warnings */
+  --alert-red: #EF4444;      /* Critical status, escalate triggers */
+  --cool-slate: #64748B;     /* Insufficient data, subtle metadata */
+
   --text-main: #F8FAFC;
   --text-muted: #94A3B8;
   --text-dim: #64748B;
-  --accent-cyan: #38BDF8;
-  --color-normal: #10B981;
-  --color-attention: #F59E0B;
-  --color-critical: #EF4444;
-  --color-insufficient: #64748B;
+
   --font-mono: 'JetBrains Mono', monospace, ui-monospace, SFMono-Regular;
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
@@ -25,7 +29,7 @@
 body {
   margin: 0;
   padding: 0;
-  background-color: var(--bg-space);
+  background-color: var(--bg-obsidian);
   color: var(--text-main);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -37,28 +41,27 @@ body {
   font-feature-settings: 'tnum' 1;
 }
 
-/* Aerospace panel container */
-.aero-panel {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-crisp);
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+/* Master-detail console panels */
+.console-panel {
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-hairline);
+  border-radius: 2px;
 }
 
-.aero-well {
+.console-well {
   background-color: var(--bg-well);
   border: 1px solid var(--border-subtle);
-  border-radius: 4px;
+  border-radius: 2px;
 }
 
 /* Buttons */
 .aero-btn {
-  background-color: #1E293B;
+  background-color: #121826;
   color: #E2E8F0;
-  border: 1px solid #334155;
-  border-radius: 4px;
+  border: 1px solid #1E293B;
+  border-radius: 2px;
   padding: 6px 12px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   display: inline-flex;
@@ -69,8 +72,8 @@ body {
 }
 
 .aero-btn:hover {
-  background-color: #334155;
-  border-color: #475569;
+  background-color: #1E293B;
+  border-color: #38BDF8;
   color: #FFFFFF;
 }
 
@@ -82,6 +85,7 @@ body {
 
 .aero-btn-primary:hover {
   background-color: #0369A1;
+  border-color: #38BDF8;
 }
 
 .aero-btn-danger {
@@ -94,45 +98,58 @@ body {
   background-color: #B91C1C;
 }
 
+/* Subtle Tooltip helper */
+.tooltip-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.tooltip-container:hover .tooltip-content {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.tooltip-content {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  transform: translateY(4px);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  z-index: 100;
+  background-color: #07090F;
+  border: 1px solid #38BDF8;
+  color: #E2E8F0;
+  font-size: 11px;
+  line-height: 1.4;
+  padding: 8px 10px;
+  border-radius: 2px;
+  width: 260px;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8);
+  font-family: var(--font-sans);
+  font-weight: 400;
+  text-transform: none;
+}
+
 /* Scrollbars */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
+
 ::-webkit-scrollbar-track {
-  background: #090D16;
+  background: #080B12;
 }
+
 ::-webkit-scrollbar-thumb {
-  background: #1F2937;
-  border-radius: 4px;
+  background: #1E293B;
+  border-radius: 2px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: #374151;
-}
-
-/* Modal Backdrop */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(5, 8, 15, 0.85);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 20px;
-}
-
-.modal-content {
-  background-color: var(--bg-card);
-  border: 1px solid var(--border-crisp);
-  border-radius: 8px;
-  max-width: 800px;
-  width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+  background: #334155;
 }
