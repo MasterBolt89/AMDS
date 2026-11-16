@@ -132,19 +132,19 @@ start-demo.bat
 You can also start each service manually or run the frontend standalone:
 
 * **Full-Stack Mode:**
-  ```bash
+  ```powershell
   # Terminal 1: Live FastAPI Backend
-  cd backend && uv sync && uv run uvicorn app.main:app --reload --port 8000
+  cd backend; uv sync; uv run uvicorn app.main:app --reload --port 8000
 
   # Terminal 2: React Vite Command Center
-  cd frontend && npm install && npm run dev
+  cd frontend; npm install; npm run dev
   ```
   * **Interactive OpenAPI Swagger Docs:** [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
   * **Frontend Command Center:** [http://localhost:5173](http://localhost:5173)
 
 * **Standalone Frontend Mode (Automatic Browser Mock Fallback):**
-  ```bash
-  cd frontend && npm install && npm run dev
+  ```powershell
+  cd frontend; npm install; npm run dev
   ```
   * The frontend client attempts the live FastAPI backend (`http://127.0.0.1:8000`) first.
   * If the backend is not running, the application **automatically falls back** to the built-in stateful browser mock simulator.
