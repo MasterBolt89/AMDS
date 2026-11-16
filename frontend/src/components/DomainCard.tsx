@@ -576,45 +576,44 @@ export const DomainCard: React.FC<DomainCardProps> = ({
               {parsed.label}
             </div>
 
-            {/* Delta & Baseline Info Line (Minimum 12px, text-xs) */}
+            {/* Delta & Baseline Info (Stacked Block Lines, No Clipping) */}
             <div
               style={{
                 display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                fontSize: '12px',
+                flexDirection: 'column',
+                gap: '2px',
+                fontSize: '11.5px',
                 fontFamily: "'JetBrains Mono', monospace",
                 color: '#64748B',
-                marginTop: '2px',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
+                marginTop: '3px',
               }}
             >
               {parsed.delta_from_baseline_pct !== null && (
-                <span
+                <div
                   data-testid="headline-delta"
                   style={{
                     color: isAttention ? '#FBBF24' : '#34D399',
                     fontWeight: 700,
                     whiteSpace: 'nowrap',
+                    fontVariantNumeric: 'tabular-nums',
                   }}
                 >
                   {parsed.delta_from_baseline_pct_str
                     ? `${parsed.delta_from_baseline_pct_str.startsWith('+') || parsed.delta_from_baseline_pct_str.startsWith('-') ? '' : '+'}${parsed.delta_from_baseline_pct_str}% vs baseline`
                     : `${parsed.delta_from_baseline_pct >= 0 ? '+' : ''}${parsed.delta_from_baseline_pct.toFixed(1)}% vs baseline`}
-                </span>
+                </div>
               )}
               {parsed.baseline_mean !== null && (
-                <>
-                  <span style={{ color: '#475569' }}>·</span>
-                  <span
-                    data-testid="headline-baseline"
-                    style={{ color: '#94A3B8', whiteSpace: 'nowrap' }}
-                  >
-                    Baseline: {parsed.baseline_mean_str ?? parsed.baseline_mean} {parsed.unit}
-                  </span>
-                </>
+                <div
+                  data-testid="headline-baseline"
+                  style={{
+                    color: '#94A3B8',
+                    whiteSpace: 'nowrap',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
+                >
+                  Baseline: {parsed.baseline_mean_str ?? parsed.baseline_mean} {parsed.unit}
+                </div>
               )}
             </div>
           </div>
